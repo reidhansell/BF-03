@@ -107,4 +107,4 @@ dist
 config.json
 
 # Database
-shade.db
+battlefield.db

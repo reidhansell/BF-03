@@ -35,11 +35,11 @@ module.exports = {
             await interaction.editReply({ content: "Please obtain a Rebel or Imperial role before creating a match. You cannot have both. This can be done by an admin or a role select bot." });
             return;
         }
-        //let player_ids = Array(16).fill("");
+        let player_ids = Array(16).fill("");
         //let player_ids = ["111", "111", "111", "111", "111", "111", "111", "111", "", "", "", "", "", "", "", ""]
         //let player_ids = ["", "", "", "", "", "", "", "", "111", "111", "111", "111", "111", "111", "111", "111"]
         //let player_ids = ["111", "111", "111", "111", "111", "111", "111", "111", "111", "111", "111", "111", "111", "111", "111", "111"]
-        let player_ids = ["111", "111", "111", "111", "", "", "", "", "111", "111", "111", "111", "", "", "", ""]
+        //let player_ids = ["111", "111", "111", "111", "", "", "", "", "111", "111", "111", "111", "", "", "", ""]
         if (faction == "Rebel") {
             player_ids[0] = interaction.user.id;
         } else {
