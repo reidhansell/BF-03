@@ -1,0 +1,25 @@
+{
+  "name": "swg-shade",
+  "version": "1.0.0",
+  "description": "A Discord bot",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "npm install && node deploy-commands.js && node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/reidhansell/SWG-SHADE.git"
+  },
+  "author": "Reid Hansell",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/reidhansell/SWG-SHADE/issues"
+  },
+  "homepage": "https://github.com/reidhansell/SWG-SHADE#readme",
+  "dependencies": {
+    "better-sqlite3": "^8.0.1",
+    "discord.js": "^14.7.1",
+    "uuid": "^9.0.0"
+  }
+}
