@@ -122,6 +122,15 @@ class Match {
         this.started = true;
     }
 
+    isEmpty() {
+        for (let i = 0; i < 16; i++) {
+            if (this.player_ids[i] != "") {
+                return false;
+            }
+        }
+        return true;
+    }
+
     toString() {
         const contractContent = "**BATTLEFIELD MATCHMAKING**\n"
             + "Status: " + this.getStatus() + "\n"

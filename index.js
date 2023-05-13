@@ -82,6 +82,9 @@ function startCollectors() {
             else if (interaction.customId === matchObject.dequeue_id) {
                 matchObject.dequeuePlayer(interaction.user.id);
                 updateMatch(matchObject);
+                if (matchObject.isEmpty()) {
+                    interaction.deleteReply();
+                }
                 await interaction.update({ content: matchObject.toString(), components: [matchObject.toButtons()] });
             }
             else if (interaction.customId === matchObject.start_match_id) {
