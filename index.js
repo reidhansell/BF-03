@@ -61,7 +61,7 @@ function startCollectors() {
             matchObject = getMatchByButton(interaction.customId);
             matchMessage = await interaction.channel.messages.fetch(matchObject.message_id);
             if (interaction.customId === matchObject.queue_id) {
-                await interaction.deferReply();
+                await interaction.deferReply({ ephemeral: true });
                 let faction = "";
                 if (interaction.member.roles.cache.some(role => role.name === "Rebel" && role.guild.id === interaction.guild.id) && !interaction.member.roles.cache.some(role => role.name === "Imperial" && role.guild.id === interaction.guild.id)) {
                     faction = "Rebel";
@@ -83,7 +83,7 @@ function startCollectors() {
                 }
             }
             else if (interaction.customId === matchObject.dequeue_id) {
-                await interaction.deferReply();
+                await interaction.deferReply({ ephemeral: true });
                 matchObject.dequeuePlayer(interaction.user.id);
                 updateMatch(matchObject);
                 if (matchObject.isEmpty()) {
@@ -95,7 +95,7 @@ function startCollectors() {
                 }
             }
             else if (interaction.customId === matchObject.start_match_id) {
-                await interaction.deferReply();
+                await interaction.deferReply({ ephemeral: true });
                 if (interaction.user.id != matchObject.initiator_id) {
                     await interaction.editReply({ ephemeral: true, content: "You cannot start a match that you did not initiate." });
                     return;
