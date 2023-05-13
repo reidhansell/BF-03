@@ -69,16 +69,16 @@ function startCollectors() {
                     faction = "Imperial";
                 }
                 else {
-                    await interaction.reply({ ephemeral: true, content: "Please obtain a Rebel or Imperial role before queueing. You cannot have both. This can be done by an admin or a role select bot." });
+                    await interaction.editReply({ ephemeral: true, content: "Please obtain a Rebel or Imperial role before queueing. You cannot have both. This can be done by an admin or a role select bot." });
                     return;
                 }
                 result = matchObject.queuePlayer(interaction.user.id, faction);
                 if (result === "Queue full." || result === "Already in queue.") {
-                    await interaction.reply({ ephemeral: true, content: result });
+                    await interaction.editReply({ ephemeral: true, content: result });
                 } else {
                     updateMatch(matchObject);
                     await interaction.update({ content: matchObject.toString(), components: [matchObject.toButtons()] });
-                    await interaction.reply({ ephemeral: true, content: "Added to queue" });
+                    await interaction.editReply({ ephemeral: true, content: "Added to queue" });
                 }
             }
             else if (interaction.customId === matchObject.dequeue_id) {
@@ -89,18 +89,18 @@ function startCollectors() {
                     await interaction.deleteReply();
                 }
                 await interaction.update({ content: matchObject.toString(), components: [matchObject.toButtons()] });
-                await interaction.reply({ ephemeral: true, content: "Removed from queue." });
+                await interaction.editReply({ ephemeral: true, content: "Removed from queue." });
             }
             else if (interaction.customId === matchObject.start_match_id) {
                 await interaction.deferReply({ ephemeral: true });
                 if (interaction.user.id != matchObject.initiator_id) {
-                    await interaction.reply({ ephemeral: true, content: "You cannot start a match that you did not initiate." });
+                    await interaction.editReply({ ephemeral: true, content: "You cannot start a match that you did not initiate." });
                     return;
                 }
                 matchObject.start();
                 updateMatch(matchObject);
                 await interaction.update({ content: matchObject.toString(), components: [] });
-                await interaction.reply({ ephemeral: true, content: "Match started." });
+                await interaction.editReply({ ephemeral: true, content: "Match started." });
             }
         }
         )
