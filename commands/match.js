@@ -38,6 +38,7 @@ module.exports = {
         }
         else {
             await interaction.editReply({ content: "Please obtain a Rebel or Imperial role before creating a match. You cannot have both. This can be done by an admin or a role select bot." });
+            await message.delete();
             return;
         }
         let player_ids = Array(16).fill("");
