@@ -60,6 +60,7 @@ function startCollectors() {
         collector.on('collect', async (interaction) => {
             matchObject = getMatchByButton(interaction.customId);
             if (interaction.customId === matchObject.queue_id) {
+                await interaction.deferReply({ ephemeral: true });
                 let faction = "";
                 if (interaction.member.roles.cache.some(role => role.name === "Rebel" && role.guild.id === interaction.guild.id) && !interaction.member.roles.cache.some(role => role.name === "Imperial" && role.guild.id === interaction.guild.id)) {
                     faction = "Rebel";
@@ -77,17 +78,21 @@ function startCollectors() {
                 } else {
                     updateMatch(matchObject);
                     await interaction.update({ content: matchObject.toString(), components: [matchObject.toButtons()] });
+                    await interaction.reply({ ephemeral: true, content: "Added to queue" });
                 }
             }
             else if (interaction.customId === matchObject.dequeue_id) {
+                await interaction.deferReply({ ephemeral: true });
                 matchObject.dequeuePlayer(interaction.user.id);
                 updateMatch(matchObject);
                 if (matchObject.isEmpty()) {
-                    interaction.deleteReply();
+                    await interaction.deleteReply();
                 }
                 await interaction.update({ content: matchObject.toString(), components: [matchObject.toButtons()] });
+                await interaction.reply({ ephemeral: true, content: "Removed from queue." });
             }
             else if (interaction.customId === matchObject.start_match_id) {
+                await interaction.deferReply({ ephemeral: true });
                 if (interaction.user.id != matchObject.initiator_id) {
                     await interaction.reply({ ephemeral: true, content: "You cannot start a match that you did not initiate." });
                     return;
@@ -95,6 +100,7 @@ function startCollectors() {
                 matchObject.start();
                 updateMatch(matchObject);
                 await interaction.update({ content: matchObject.toString(), components: [] });
+                await interaction.reply({ ephemeral: true, content: "Match started." });
             }
         }
         )
