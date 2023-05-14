@@ -36,19 +36,14 @@ module.exports = {
         else if (interaction.member.roles.cache.some(role => role.name === "Imperial" && role.guild.id === interaction.guild.id) && !interaction.member.roles.cache.some(role => role.name === "Rebel" && role.guild.id === interaction.guild.id)) {
             faction = "Imperial";
         }
-        else {
-            await interaction.editReply({ content: "Please obtain a Rebel or Imperial role before creating a match. You cannot have both. This can be done by an admin or a role select bot." });
-            await message.delete();
-            return;
-        }
         let player_ids = Array(16).fill("");
         //let player_ids = ["111", "111", "111", "111", "111", "111", "111", "111", "", "", "", "", "", "", "", ""]
         //let player_ids = ["", "", "", "", "", "", "", "", "111", "111", "111", "111", "111", "111", "111", "111"]
         //let player_ids = ["111", "111", "111", "111", "111", "111", "111", "111", "111", "111", "111", "111", "111", "111", "111", "111"]
         //let player_ids = ["111", "111", "111", "111", "", "", "", "", "111", "111", "111", "111", "", "", "", ""]
-        if (faction == "Rebel") {
+        if (faction === "Rebel") {
             player_ids[0] = interaction.user.id;
-        } else {
+        } else if (faction === "Imperial") {
             player_ids[8] = interaction.user.id;
         }
         let locations = ["Massassi Isle, Yavin IV", "Jungle Warfare, Yavin IV", "Bunker Assault, Endor", "Data Runner, Endor"];
@@ -65,7 +60,8 @@ module.exports = {
             "date": (interaction.options.getString("date") ? interaction.options.getString("date") : date),
             "location": (interaction.options.getString("location") ? interaction.options.getString("location") : location),
             "time": (interaction.options.getString("time") ? interaction.options.getString("time") : time),
-            "queue_id": uuidv4(),
+            "rebel_queue_id": uuidv4(),
+            "imperial_queue_id": uuidv4(),
             "dequeue_id": uuidv4(),
             "start_match_id": uuidv4(),
             "started": false,

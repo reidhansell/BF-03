@@ -61,19 +61,8 @@ function startCollectors() {
             await interaction.deferReply({ ephemeral: true });
             matchObject = getMatchByButton(interaction.customId);
             matchMessage = await interaction.channel.messages.fetch(matchObject.message_id);
-            if (interaction.customId === matchObject.queue_id) {
-                let faction = "";
-                if (interaction.member.roles.cache.some(role => role.name === "Rebel" && role.guild.id === interaction.guild.id) && !interaction.member.roles.cache.some(role => role.name === "Imperial" && role.guild.id === interaction.guild.id)) {
-                    faction = "Rebel";
-                }
-                else if (interaction.member.roles.cache.some(role => role.name === "Imperial" && role.guild.id === interaction.guild.id) && !interaction.member.roles.cache.some(role => role.name === "Rebel" && role.guild.id === interaction.guild.id)) {
-                    faction = "Imperial";
-                }
-                else {
-                    await interaction.editReply({ ephemeral: true, content: "Please obtain a Rebel or Imperial role before queueing. You cannot have both. This can be done by an admin or a role select bot." });
-                    return;
-                }
-                result = matchObject.queuePlayer(interaction.user.id, faction);
+            if (interaction.customId === matchObject.rebel_queue_id || interaction.customId === matchObject.imperial_queue_id) {
+                result = matchObject.queuePlayer(interaction.user.id, (interaction.customId === matchObject.rebel_queue_id ? "Rebel" : "Imperial"));
                 if (result === "Queue full." || result === "Already in queue.") {
                     await interaction.editReply({ ephemeral: true, content: result });
                 } else {

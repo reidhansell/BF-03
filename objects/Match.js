@@ -10,7 +10,8 @@ class Match {
     date = "";
     time = "";
     location = "";
-    queue_id = "";
+    rebel_queue_id = "";
+    imperial_queue_id = "";
     dequeue_id = "";
     start_match_id = "";
     started = false;
@@ -26,7 +27,8 @@ class Match {
         this.date = match.date;
         this.time = match.time;
         this.location = match.location;
-        this.queue_id = match.queue_id;
+        this.rebel_queue_id = match.rebel_queue_id;
+        this.imperial_queue_id = match.imperial_queue_id;
         this.dequeue_id = match.dequeue_id;
         this.start_match_id = match.start_match_id;
         this.started = match.started;
@@ -84,6 +86,8 @@ class Match {
             if (this.player_ids[i] === player_id) {
                 return "Already in queue.";
             }
+        }
+        for (let i = 0; i < 16; i++) {
             if ((faction === "Rebel") && (this.player_ids[i] === "") && (i < 8)) {
                 this.player_ids[i] = player_id;
                 return "Added to queue.";
@@ -154,8 +158,12 @@ class Match {
             return new ActionRowBuilder()
                 .addComponents(
                     new ButtonBuilder()
-                        .setCustomId(this.queue_id)
-                        .setLabel("Queue")
+                        .setCustomId(this.rebel_queue_id)
+                        .setLabel("Queue Rebel")
+                        .setStyle(ButtonStyle.Success),
+                    new ButtonBuilder()
+                        .setCustomId(this.imperial_queue_id)
+                        .setLabel("Queue Imperial")
                         .setStyle(ButtonStyle.Success),
                     new ButtonBuilder()
                         .setCustomId(this.dequeue_id)
@@ -171,8 +179,12 @@ class Match {
             return new ActionRowBuilder()
                 .addComponents([
                     new ButtonBuilder()
-                        .setCustomId(this.queue_id)
-                        .setLabel("Queue")
+                        .setCustomId(this.rebel_queue_id)
+                        .setLabel("Queue Rebel")
+                        .setStyle(ButtonStyle.Success),
+                    new ButtonBuilder()
+                        .setCustomId(this.imperial_queue_id)
+                        .setLabel("Queue Imperial")
                         .setStyle(ButtonStyle.Success),
                     new ButtonBuilder()
                         .setCustomId(this.dequeue_id)
