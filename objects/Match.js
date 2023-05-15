@@ -7,7 +7,6 @@ class Match {
     message_id = "";
     initiator_id = "";
     player_ids = [];
-    date = "";
     time = "";
     location = "";
     rebel_queue_id = "";
@@ -24,7 +23,6 @@ class Match {
         this.message_id = match.message_id;
         this.initiator_id = match.initiator_id;
         this.player_ids = match.player_ids;
-        this.date = match.date;
         this.time = match.time;
         this.location = match.location;
         this.rebel_queue_id = match.rebel_queue_id;
@@ -33,11 +31,6 @@ class Match {
         this.start_match_id = match.start_match_id;
         this.started = match.started;
         this.custom_time = match.custom_time;
-        this.custom_date = match.custom_date;
-    }
-
-    setDate(date) {
-        this.date = date;
     }
 
     setTime(time) {
@@ -138,8 +131,8 @@ class Match {
     toString() {
         const contractContent = "**BATTLEFIELD MATCHMAKING**\n"
             + "Status: " + this.getStatus() + "\n"
-            + (this.custom_time ? ("Time: " + this.time) : ("Time: <t:" + this.time + ":T>")) + " on " + (this.custom_date ? (this.date + "\n") : ("<t:" + this.date + ":d>\n"))
-            + "Location: " + this.location + "\n"
+            + (this.custom_time ? ("Time: " + this.time) : ("Time: <t:" + this.time + ":T>"));
+        + "Location: " + this.location + "\n"
             + "-------------------\n"
             + "Rebels    ---    Imperials:\n"
             + (this.player_ids[0] === "" ? "EMPTY" : ("<@" + this.player_ids[0] + ">")) + " --- " + (this.player_ids[8] === "" ? "EMPTY\n" : ("<@" + this.player_ids[8] + ">\n"))

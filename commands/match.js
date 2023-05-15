@@ -8,11 +8,6 @@ module.exports = {
         .setName('match')
         .setDescription('Begin matchmaking for battlefields!')
         .addStringOption(option =>
-            option.setName('date')
-                .setDescription('What day will this match occur? (Default: now)')
-                .setRequired(false)
-                .setMaxLength(50))
-        .addStringOption(option =>
             option.setName('time')
                 .setDescription('What time will this match occur? (Default: now)')
                 .setRequired(false)
@@ -47,7 +42,6 @@ module.exports = {
             player_ids[8] = interaction.user.id;
         }
         let locations = ["Massassi Isle, Yavin IV", "Jungle Warfare, Yavin IV", "Bunker Assault, Endor", "Data Runner, Endor"];
-        let date = Math.floor(new Date().getTime() / 1000);
         let time = Math.floor(new Date().getTime() / 1000);
         let location = locations[Math.floor(Math.random() * 4)];
         let match = new Match({
@@ -57,7 +51,6 @@ module.exports = {
             "guild_id": guild_id,
             "initiator_id": interaction.user.id,
             "player_ids": player_ids,
-            "date": (interaction.options.getString("date") ? interaction.options.getString("date") : date),
             "location": (interaction.options.getString("location") ? interaction.options.getString("location") : location),
             "time": (interaction.options.getString("time") ? interaction.options.getString("time") : time),
             "rebel_queue_id": uuidv4(),
@@ -66,7 +59,6 @@ module.exports = {
             "start_match_id": uuidv4(),
             "started": false,
             "custom_time": (interaction.options.getString("time") ? true : false),
-            "custom_date": (interaction.options.getString("date") ? true : false)
         });
 
 
