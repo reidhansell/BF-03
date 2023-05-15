@@ -131,8 +131,8 @@ class Match {
     toString() {
         const contractContent = "**BATTLEFIELD MATCHMAKING**\n"
             + "Status: " + this.getStatus() + "\n"
-            + (this.custom_time ? ("Time: " + this.time) : ("Time: <t:" + this.time + ":T>"));
-        + "Location: " + this.location + "\n"
+            + (this.custom_time ? ("Time: " + this.time) : ("Time: <t:" + this.time + ":T>"))
+            + "Location: " + this.location + "\n"
             + "-------------------\n"
             + "Rebels    ---    Imperials:\n"
             + (this.player_ids[0] === "" ? "EMPTY" : ("<@" + this.player_ids[0] + ">")) + " --- " + (this.player_ids[8] === "" ? "EMPTY\n" : ("<@" + this.player_ids[8] + ">\n"))
