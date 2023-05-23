@@ -63,6 +63,7 @@ module.exports = {
 
 
         await message.edit({ content: match.toString(), components: [match.toButtons()] });
+        await message.crosspost();
         await interaction.editReply({ content: "Match creation successful: " + message.url });
 
         openMatch(match);
