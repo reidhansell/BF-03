@@ -58,7 +58,12 @@ function startCollectors() {
         const collector = channel.createMessageComponentCollector({ componentType: ComponentType.Button });
 
         collector.on('collect', async (interaction) => {
-            await interaction.deferReply({ ephemeral: true });
+            try{
+                await interaction.deferReply({ ephemeral: true });
+            }catch(error){
+                console.log("Interaction could not be deferred.");
+                return;
+            }
             matchObject = getMatchByButton(interaction.customId);
             matchMessage = await interaction.channel.messages.fetch(matchObject.message_id);
             if (interaction.customId === matchObject.rebel_queue_id || interaction.customId === matchObject.imperial_queue_id) {
