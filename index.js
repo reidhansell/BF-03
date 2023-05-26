@@ -3,10 +3,14 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { Client, GatewayIntentBits, Collection, ComponentType } = require('discord.js');
 const { token } = require('./config.json');
-const { updateMatch, getMatchByButton } = require('./databaseManager');
+const { updateMatch, getMatchByButton, addExport } = require('./databaseManager');
+const axios = require('axios');
+const cheerio = require('cheerio');
+const Export = require("./objects/Export");
+const Player = require("./objects/Player");
 
 // Create a new client instance
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
 
 const eventsPath = path.join(__dirname, 'events');
 const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith('.js'));
@@ -58,9 +62,9 @@ function startCollectors() {
         const collector = channel.createMessageComponentCollector({ componentType: ComponentType.Button });
 
         collector.on('collect', async (interaction) => {
-            try{
+            try {
                 await interaction.deferReply({ ephemeral: true });
-            }catch(error){
+            } catch (error) {
                 console.log("Interaction could not be deferred.");
                 return;
             }
@@ -98,9 +102,9 @@ function startCollectors() {
                 await interaction.editReply({ ephemeral: true, content: "Match started." });
             }
         }
-        )
-    };
-    console.log("collectors are running on in all known guilds");
+        );
+        console.log("collectors are running on in all known guilds");
+    }
 }
 
 client.on('ready', () => {
@@ -117,4 +121,41 @@ client.on("channelCreate", channel => {
     }
 })
 
+client.on('messageCreate', async message => {
+    if (message.channel.name === 'exports' && message.attachments.size > 0) {
+        message.attachments.forEach(attachment => {
+            if (attachment.name.endsWith('.html')) {
+                axios.get(attachment.url)
+                    .then(response => {
+                        const $ = cheerio.load(response.data);
+                        let players = [];
+                        $('table tr').each((i, row) => {
+                            if (i > 0) { // Skip header row
+                                let cells = $(row).find('td');
+                                let player = new Player({
+                                    name: $(cells[0]).text(),
+                                    faction: $(cells[1]).text(),
+                                    kills: parseInt($(cells[2]).text()),
+                                    assists: parseInt($(cells[3]).text()),
+                                    deaths: parseInt($(cells[4]).text()),
+                                    damage: parseInt($(cells[5]).text()),
+                                    healing: parseInt($(cells[6]).text()),
+                                    captures: parseInt($(cells[7]).text())
+                                });
+                                players.push(player);
+                            }
+                        });
+                        let exportObj = new Export(players);
+                        // Save to the database
+                        addExport(exportObj);
+
+                        // Send summary to #exports channel
+                        // Assuming summary() is a method in the Export class that returns a summary string
+                        message.channel.send(`Export added:\n ${exportObj.summary()}`);
+                    })
+                    .catch(console.error);
+            }
+        });
+    }
+});
 
