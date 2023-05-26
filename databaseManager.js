@@ -30,14 +30,8 @@ function getMatchByButton(button_id) {
 
 function addExport(exportObj) {
     const addExport = db.prepare("INSERT INTO export (date, data) VALUES (?, ?)");
-    const currentDate = new Date().toISOString().slice(0,10); // get current date in YYYY-MM-DD format
+    const currentDate = new Date().toISOString().slice(0, 10); // get current date in YYYY-MM-DD format
     addExport.run(currentDate, JSON.stringify(exportObj));
-}
-
-function getExportsByDate(date) {
-    const getExports = db.prepare("SELECT data FROM export WHERE date = ?");
-    const rows = getExports.all(date);
-    return rows.map(row => JSON.parse(row.data)); // convert data back into objects
 }
 
 function getExportsByWeek(startDate) {
@@ -46,13 +40,90 @@ function getExportsByWeek(startDate) {
     endDate.setDate(endDate.getDate() + 7);
 
     // convert dates to YYYY-MM-DD format
-    startDate = startDate.toISOString().slice(0,10);
-    endDate = endDate.toISOString().slice(0,10);
+    startDate = startDate.toISOString().slice(0, 10);
+    endDate = endDate.toISOString().slice(0, 10);
 
     const getExports = db.prepare("SELECT data FROM export WHERE date BETWEEN ? AND ?");
     const rows = getExports.all(startDate, endDate);
     return rows.map(row => JSON.parse(row.data)); // convert data back into objects
 }
 
-module.exports = { openMatch, updateMatch, getMatchByButton, updateURL, addExport, getExportsByDate, getExportsByWeek }
+function getTopPlayersByStat(exports, faction, stat, limit) {
+    // Filter exports by faction
+    const filteredExports = exports.filter((exportObj) => exportObj.players.some((player) => player.faction === faction));
+
+    // Flatten the player list for the specified faction
+    let players = filteredExports.reduce((acc, exportObj) => {
+        const factionPlayers = exportObj.players.filter((player) => player.faction === faction);
+        return acc.concat(factionPlayers);
+    }, []);
+
+    // Create a map with player names as keys, and player objects as values
+    let playerMap = new Map();
+    players.forEach(player => {
+        let existingPlayer = playerMap.get(player.name);
+        if (existingPlayer) {
+            // If player already exists in map, sum up the stat
+            existingPlayer[stat] += player[stat];
+        } else {
+            // Otherwise, add the player to the map
+            playerMap.set(player.name, player);
+        }
+    });
+
+    // Convert the map values back into an array
+    players = Array.from(playerMap.values());
+
+    // Sort players by the specified stat in descending order
+    players.sort((a, b) => b[stat] - a[stat]);
+
+    // Return the top players with the specified limit
+    return players.slice(0, limit);
+}
+
+function getTopPlayersByHeroism(exports, faction, limit) {
+    // Filter exports by faction
+    const filteredExports = exports.filter((exportObj) => exportObj.players.some((player) => player.faction === faction));
+
+    // Flatten the player list for the specified faction
+    let players = filteredExports.reduce((acc, exportObj) => {
+        const factionPlayers = exportObj.players.filter((player) => player.faction === faction);
+        return acc.concat(factionPlayers);
+    }, []);
+
+    // Create a map with player names as keys, and player objects as values
+    let playerMap = new Map();
+    players.forEach(player => {
+        let existingPlayer = playerMap.get(player.name);
+        if (existingPlayer) {
+            // If player already exists in map, sum up the stats
+            existingPlayer.kills += player.kills;
+            existingPlayer.captures += player.captures;
+            existingPlayer.assists += player.assists;
+            existingPlayer.damage += player.damage;
+            existingPlayer.healing += player.healing;
+        } else {
+            // Otherwise, add the player to the map
+            playerMap.set(player.name, player);
+        }
+    });
+
+    // Convert the map values back into an array
+    players = Array.from(playerMap.values());
+
+    // Calculate heroism for each player
+    players = players.map((player) => ({
+        ...player,
+        heroism: player.kills + (player.captures * 2) + (player.assists / 3) + (player.damage / 50000) + (player.healing / 50000)
+    }));
+
+    // Sort players by heroism in descending order
+    players.sort((a, b) => b.heroism - a.heroism);
+
+    // Return the top players with the specified limit
+    return players.slice(0, limit);
+}
+
+
+module.exports = { openMatch, updateMatch, getMatchByButton, updateURL, addExport, getExportsByWeek, getTopPlayersByHeroism, getTopPlayersByStat }
 
