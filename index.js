@@ -68,8 +68,8 @@ function startCollectors() {
                 console.log("Interaction could not be deferred.");
                 return;
             }
-            matchObject = getMatchByButton(interaction.customId);
-            matchMessage = await interaction.channel.messages.fetch(matchObject.message_id);
+            let matchObject = getMatchByButton(interaction.customId);
+            let matchMessage = await interaction.channel.messages.fetch(matchObject.message_id);
             if (interaction.customId === matchObject.rebel_queue_id || interaction.customId === matchObject.imperial_queue_id) {
                 result = matchObject.queuePlayer(interaction.user.id, (interaction.customId === matchObject.rebel_queue_id ? "Rebel" : "Imperial"));
                 if (result === "Queue full." || result === "Already in queue.") {
