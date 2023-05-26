@@ -151,6 +151,7 @@ client.on('messageCreate', async message => {
 
                         // Send summary to #exports channel
                         // Assuming summary() is a method in the Export class that returns a summary string
+                        message.delete();
                         message.channel.send(`Export added:\n ${exportObj.summary()}`);
                     })
                     .catch(console.error);
