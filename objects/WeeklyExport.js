@@ -44,13 +44,13 @@ class WeeklyExport {
         const topHeroismRebel = getTopPlayersByHeroism(exports, "Rebel", 10);
         const topDamageRebel = getTopPlayersByStat(exports, "Rebel", 'damage', 5);
         const topHealingRebel = getTopPlayersByStat(exports, "Rebel", 'healing', 5);
-        const topAssistsRebel = getTopPlayersByStat(exports, "Rebel", 'assists', 5);
+        const topKillsRebel = getTopPlayersByStat(exports, "Rebel", 'kills', 5);
         const topCapturesRebel = getTopPlayersByStat(exports, "Rebel", 'captures', 5);
 
         const topHeroismImperial = getTopPlayersByHeroism(exports, "Imperial", 10);
         const topDamageImperial = getTopPlayersByStat(exports, "Imperial", 'damage', 5);
         const topHealingImperial = getTopPlayersByStat(exports, "Imperial", 'healing', 5);
-        const topAssistsImperial = getTopPlayersByStat(exports, "Imperial", 'assists', 5);
+        const topKillsImperial = getTopPlayersByStat(exports, "Imperial", 'kills', 5);
         const topCapturesImperial = getTopPlayersByStat(exports, "Imperial", 'captures', 5);
 
         // Prepare data for the tables
@@ -60,7 +60,7 @@ class WeeklyExport {
                 <div class="table-cell-stats">
                     <div class="table-row" style="margin-bottom: 25px;">
                         <div class="table-cell" style="margin-right: 25px;">${this.createTable('Top Damage', topDamageRebel, topDamageImperial, 'damage')}</div>
-                        <div class="table-cell">${this.createTable('Top Assists', topAssistsRebel, topAssistsImperial, 'assists')}</div>
+                        <div class="table-cell">${this.createTable('Top Kills', topKillsRebel, topKillsImperial, 'kills')}</div>
                     </div>
                     <div class="table-row">
                         <div class="table-cell" style="margin-right: 25px;">${this.createTable('Top Healing', topHealingRebel, topHealingImperial, 'healing')}</div>
