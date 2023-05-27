@@ -49,35 +49,31 @@ function getExportsByWeek(startDate) {
 }
 
 function getTopPlayersByStat(exports, faction, stat, limit) {
-    // Filter exports by faction
+
     const filteredExports = exports.filter((exportObj) => exportObj.players.some((player) => player.faction === faction));
 
-    // Flatten the player list for the specified faction
     let players = filteredExports.reduce((acc, exportObj) => {
         const factionPlayers = exportObj.players.filter((player) => player.faction === faction);
         return acc.concat(factionPlayers);
     }, []);
 
-    // Create a map with player names as keys, and player objects as values
     let playerMap = new Map();
     players.forEach(player => {
         let existingPlayer = playerMap.get(player.name);
         if (existingPlayer) {
-            // If player already exists in map, sum up the stat
+            // Make a deep copy of existingPlayer
+            existingPlayer = JSON.parse(JSON.stringify(existingPlayer));
             existingPlayer[stat] += player[stat];
         } else {
-            // Otherwise, add the player to the map
-            playerMap.set(player.name, player);
+            // Add a deep copy of player to the map
+            playerMap.set(player.name, JSON.parse(JSON.stringify(player)));
         }
     });
 
-    // Convert the map values back into an array
     players = Array.from(playerMap.values());
 
-    // Sort players by the specified stat in descending order
     players.sort((a, b) => b[stat] - a[stat]);
 
-    // Return the top players with the specified limit
     return players.slice(0, limit);
 }
 
@@ -96,15 +92,16 @@ function getTopPlayersByHeroism(exports, faction, limit) {
     players.forEach(player => {
         let existingPlayer = playerMap.get(player.name);
         if (existingPlayer) {
-            // If player already exists in map, sum up the stats
+            // Make a deep copy of existingPlayer
+            existingPlayer = JSON.parse(JSON.stringify(existingPlayer));
             existingPlayer.kills += player.kills;
             existingPlayer.captures += player.captures;
             existingPlayer.assists += player.assists;
             existingPlayer.damage += player.damage;
             existingPlayer.healing += player.healing;
         } else {
-            // Otherwise, add the player to the map
-            playerMap.set(player.name, player);
+            // Add a deep copy of player to the map
+            playerMap.set(player.name, JSON.parse(JSON.stringify(player)));
         }
     });
 
@@ -123,7 +120,6 @@ function getTopPlayersByHeroism(exports, faction, limit) {
     // Return the top players with the specified limit
     return players.slice(0, limit);
 }
-
 
 module.exports = { openMatch, updateMatch, getMatchByButton, updateURL, addExport, getExportsByWeek, getTopPlayersByHeroism, getTopPlayersByStat }
 
