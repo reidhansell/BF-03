@@ -1,7 +1,7 @@
 // Require the necessary discord.js classes
 const fs = require('node:fs');
 const path = require('node:path');
-const { Client, GatewayIntentBits, Collection, ComponentType } = require('discord.js');
+const { Client, GatewayIntentBits, Collection, ComponentType, Attachment } = require('discord.js');
 const { token } = require('./config.json');
 const { updateMatch, getMatchByButton, addExport } = require('./databaseManager');
 const axios = require('axios');
@@ -152,7 +152,9 @@ client.on('messageCreate', async message => {
                         // Send summary to #exports channel
                         // Assuming summary() is a method in the Export class that returns a summary string
                         message.delete();
-                        message.channel.send(`Export added:\n ${exportObj.summary()}`);
+                        exportObj.summary().then(imagePath => {
+                            message.channel.send({ content: `Export added`, files: [{ attachment: imagePath, name: 'table.png' }] });
+                        }).catch(console.error);
                     })
                     .catch(console.error);
             }

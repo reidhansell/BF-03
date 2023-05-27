@@ -1,3 +1,8 @@
+const puppeteer = require('puppeteer');
+const fs = require('fs');
+const path = require('path');
+
+
 class Export {
     constructor(players, date) {
         if (players.length < 8 || players.length > 16) {
@@ -15,26 +20,122 @@ class Export {
         return ' '.repeat(leftPadding) + value + ' '.repeat(rightPadding);
     }
 
-    summary() {
-        const header = "+--------------+-----------+----+----+----+--------+---------+-----+";
-        const divider = "+--------------+-----------+----+----+----+--------+---------+-----+";
-        let summaryStr = `\`\`\`${header}\n|    Player    |  Faction  | Ki | As | De | Damage | Healing | Cap |\n${divider}\n`;
+    async summary() {
+        // Prepare data for the table
+        let data = this.players.map(player => `
+            <tr style="color: ${player.faction === 'Rebel' ? 'red' : '#1772b4'}">
+                <td>${player.name}</td>
+                <td>${player.faction}</td>
+                <td>${player.kills}</td>
+                <td>${player.assists}</td>
+                <td>${player.deaths}</td>
+                <td>${player.damage}</td>
+                <td>${player.healing}</td>
+                <td>${player.captures}</td>
+            </tr>
+        `).join('');
 
-        for (const player of this.players) {
-            const formattedName = player.name.substring(0, 12).padEnd(12, ' ');
-            const formattedFaction = player.faction.substring(0, 9).padEnd(9, ' ');
+        // Prepare HTML
+        let html = `
+            <html>
+                <head>
+                    <style>
+                        @font-face {
+                            font-family: 'SW'; /*You can use whatever name that you want*/
+                            src: url('./Starjhol.ttf');
+                        }
+    
+                        table { 
+                            margin-top: 5px;
+                            padding-top: 5px;
+                            border-collapse: collapse; 
+                            width: 100%; 
+                            font-family: sans-serif;
+                            font-weight: bold;
+                        }
+                        td, th { 
+                            border: 1px solid black; 
+                            padding: 8px; 
+                            text-align: center; 
+                        }
+                        tr:nth-child(even) { 
+                            background-color: #f2f2f2; 
+                        }
+                        body {
+                            background-color: black;
+                            background-image: radial-gradient(ellipse at center, rgba(255,255,255,0.3) 0%, rgba(0,0,0,1) 100%);
+                            color: white;
+                        }
+                        .banner, .banner h1 {
+                            text-align: center;
+                            font-size: 32px;
+                            font-family: 'SW', sans-serif;
+                            margin-bottom: 0px;
+                            padding-bottom: 0px;
+                            text-shadow: 0 4px 4px rgba(0, 0, 0, 0.5);
+                        }
+                        #player-table th, #player-table td {
+                            border: 1px solid #FFF;
+                        }
+                        #player-table tr:nth-child(even) {
+                            background-color: rgba(0, 0, 0, 0.5);
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="banner">
+                        <h1>battlefield report</h1>
+                    </div>
+                    <table id="player-table">
+                        <tr>
+                            <th>Player</th>
+                            <th>Faction</th>
+                            <th>Kills</th>
+                            <th>Assists</th>
+                            <th>Deaths</th>
+                            <th>Damage</th>
+                            <th>Healing</th>
+                            <th>Captures</th>
+                        </tr>
+                        ${data}
+                    </table>
+                </body>
+            </html>
+        `;
 
-            const formattedKills = this.centerAlign(player.kills.toString(), 2);
-            const formattedAssists = this.centerAlign(player.assists.toString(), 2);
-            const formattedDeaths = this.centerAlign(player.deaths.toString(), 2);
-            const formattedDamage = this.centerAlign(player.damage.toString(), 6);
-            const formattedHealing = this.centerAlign(player.healing.toString(), 7);
-            const formattedCaptures = this.centerAlign(player.captures.toString(), 3);
+        // Write HTML to a file
+        fs.writeFileSync('table.html', html);
 
-            summaryStr += `| ${formattedName} | ${formattedFaction} | ${formattedKills} | ${formattedAssists} | ${formattedDeaths} | ${formattedDamage} | ${formattedHealing} | ${formattedCaptures} |\n`;
-        }
+        // Launch Puppeteer, go to the page
+        const browser = await puppeteer.launch();
+        const page = await browser.newPage();
+        await page.goto('file://' + path.resolve('table.html'));
 
-        return summaryStr + `${divider}\`\`\``;
+        // Get the table height
+        const tableHeight = await page.evaluate(() => document.querySelector('#player-table').clientHeight);
+        const bannerHeight = 60; // Set the banner height (adjust as needed)
+        const viewportHeight = tableHeight + bannerHeight;
+
+        // Set the viewport height to include the banner
+        await page.setViewport({ width: 800, height: viewportHeight });
+
+        // Take a screenshot of the entire page
+        const tableElement = await page.$('#player-table');
+        const tableBoundingBox = await tableElement.boundingBox();
+        const screenshotOptions = {
+            path: 'table.png',
+            clip: {
+                x: tableBoundingBox.x,
+                y: tableBoundingBox.y - bannerHeight,
+                width: tableBoundingBox.width,
+                height: tableBoundingBox.height + bannerHeight
+            }
+        };
+        await page.screenshot(screenshotOptions);
+
+        await browser.close();
+
+        return path.resolve('table.png');
     }
 
 }
