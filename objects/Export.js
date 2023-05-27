@@ -63,7 +63,7 @@ class Export {
                         }
                         body {
                             background-color: black;
-                            background-image: radial-gradient(ellipse at center, rgba(255,255,255,0.3) 0%, rgba(0,0,0,1) 100%);
+                            background-image: radial-gradient(ellipse at center, rgba(200,200,200,0.3) 0%, rgba(0,0,0,1) 100%);
                             color: white;
                         }
                         .banner, .banner h1 {

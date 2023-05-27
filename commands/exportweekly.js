@@ -24,8 +24,11 @@ module.exports = {
                 return;
             }
 
-            // Send the summary message to the designated channel
-            weeklySummaryChannel.send(summaryStr);
+            // Generate the weekly summary as an image
+            weeklyExport.generateWeeklySummary().then(imagePath => {
+                // Send the image to the channel
+                weeklySummaryChannel.send({ content: `Weekly Summary`, files: [{ attachment: imagePath, name: 'summary.png' }] });
+            }).catch(console.error);
 
             interaction.editReply('Weekly export summary has been sent.');
         } catch (error) {

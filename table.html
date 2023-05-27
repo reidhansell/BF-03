@@ -6,171 +6,322 @@
                             font-family: 'SW'; /*You can use whatever name that you want*/
                             src: url('./Starjhol.ttf');
                         }
-    
-                        table { 
-                            margin-top: 5px;
-                            padding-top: 5px;
-                            border-collapse: collapse; 
-                            width: 100%; 
-                            font-family: sans-serif;
+
+                        .banner{
+                            font-family: 'SW', sans-serif;
+                        }
+
+                        .table-row {
+                            display: flex;
+                            width: 100%;
+                        }
+                        
+                        table {
                             font-weight: bold;
                         }
-                        td, th { 
-                            border: 1px solid black; 
-                            padding: 8px; 
-                            text-align: center; 
+
+                        .table-cell {
+                            width: 500px;
                         }
-                        tr:nth-child(even) { 
-                            background-color: #f2f2f2; 
+
+                        .table-cell-heroism {
+                            width: 30%;
                         }
+
+                        .table-cell-stats {
+                            width: 70%;
+                        }
+
+                        #player-table {
+                            width: 100%;
+                            border-collapse: collapse;
+                        }
+
+                        #player-table th, #player-table td {
+                            border: 1px solid #ddd;
+                            padding: 8px;
+                        }
+
+                        .rebel-text {
+                            color: red;
+                        }
+
+                        .imperial-text {
+                            color: #1772b4;
+                        }
+
                         body {
                             background-color: black;
-                            background-image: radial-gradient(ellipse at center, rgba(255,255,255,0.3) 0%, rgba(0,0,0,1) 100%);
+                            background-image: radial-gradient(ellipse at center, rgba(200,200,200,0.3) 0%, rgba(0,0,0,1) 100%);
                             color: white;
-                        }
-                        .banner, .banner h1 {
-                            text-align: center;
-                            font-size: 32px;
-                            font-family: 'SW', sans-serif;
-                            margin-bottom: 0px;
-                            padding-bottom: 0px;
-                            text-shadow: 0 4px 4px rgba(0, 0, 0, 0.5);
-                        }
-                        #player-table th, #player-table td {
-                            border: 1px solid #FFF;
-                        }
-                        #player-table tr:nth-child(even) {
-                            background-color: rgba(0, 0, 0, 0.5);
+                            font-family: sans-serif;
                         }
                     </style>
                 </head>
-                <body>
+                <body style="">
                     <div class="banner">
-                        <h1>battlefield report</h1>
+                        <h1>restoration battlefields weekly summary</h1>
                     </div>
-                    <table id="player-table">
-                        <tr>
-                            <th>Player</th>
-                            <th>Faction</th>
-                            <th>Kills</th>
-                            <th>Assists</th>
-                            <th>Deaths</th>
-                            <th>Damage</th>
-                            <th>Healing</th>
-                            <th>Captures</th>
-                        </tr>
-                        
-            <tr style="color: #1772b4">
-                <td>ldiot</td>
-                <td>Imperial</td>
-                <td>1</td>
-                <td>6</td>
-                <td>7</td>
-                <td>90388</td>
-                <td>46097</td>
-                <td>0</td>
-            </tr>
+                    
+            <div class="table-row">
+                <div class="table-cell-heroism" style="margin-right: 25px;">
+            <table id="player-table">
+                <tr><th colspan="4">Top Heroism</th></tr>
+                <tr><th colspan="2">Rebel</th><th colspan="2">Imperial</th></tr>
+                <tr><th>Player</th><th>heroism</th><th>Player</th><th>heroism</th></tr>
+                
+                <tr>
+                    <td class="rebel-text">Telrain</td>
+                    <td class="rebel-text">59.6</td>
+                    <td class="imperial-text">Volkish</td>
+                    <td class="imperial-text">95.6</td>
+                </tr>
+            
+                <tr>
+                    <td class="rebel-text">Black-Krrsantan</td>
+                    <td class="rebel-text">51.4</td>
+                    <td class="imperial-text">Veskaar</td>
+                    <td class="imperial-text">62.3</td>
+                </tr>
+            
+                <tr>
+                    <td class="rebel-text">Revenant</td>
+                    <td class="rebel-text">50.5</td>
+                    <td class="imperial-text">Remis</td>
+                    <td class="imperial-text">58.3</td>
+                </tr>
+            
+                <tr>
+                    <td class="rebel-text">Virael</td>
+                    <td class="rebel-text">32.7</td>
+                    <td class="imperial-text">Abraxas</td>
+                    <td class="imperial-text">55.5</td>
+                </tr>
+            
+                <tr>
+                    <td class="rebel-text">Claptow</td>
+                    <td class="rebel-text">23.9</td>
+                    <td class="imperial-text">Isiw</td>
+                    <td class="imperial-text">29.2</td>
+                </tr>
+            
+                <tr>
+                    <td class="rebel-text">Banth</td>
+                    <td class="rebel-text">15.5</td>
+                    <td class="imperial-text">Opeth</td>
+                    <td class="imperial-text">25.2</td>
+                </tr>
+            
+                <tr>
+                    <td class="rebel-text">Kazhar</td>
+                    <td class="rebel-text">12.1</td>
+                    <td class="imperial-text">Rohlan</td>
+                    <td class="imperial-text">18.9</td>
+                </tr>
+            
+                <tr>
+                    <td class="rebel-text">Beskaar</td>
+                    <td class="rebel-text">10.8</td>
+                    <td class="imperial-text">ldiot</td>
+                    <td class="imperial-text">17.2</td>
+                </tr>
+            
+                <tr>
+                    <td class="rebel-text">Orta</td>
+                    <td class="rebel-text">10.7</td>
+                    <td class="imperial-text">Farvah</td>
+                    <td class="imperial-text">16.3</td>
+                </tr>
+            
+                <tr>
+                    <td class="rebel-text">encoremts</td>
+                    <td class="rebel-text">6.7</td>
+                    <td class="imperial-text">Kay-Droma</td>
+                    <td class="imperial-text">15.2</td>
+                </tr>
+            
+            </table>
+        </div>
+                <div class="table-cell-stats">
+                    <div class="table-row" style="margin-bottom: 25px;">
+                        <div class="table-cell" style="margin-right: 25px;">
+            <table id="player-table">
+                <tr><th colspan="4">Top Damage</th></tr>
+                <tr><th colspan="2">Rebel</th><th colspan="2">Imperial</th></tr>
+                <tr><th>Player</th><th>damage</th><th>Player</th><th>damage</th></tr>
+                
+                <tr>
+                    <td class="rebel-text">Telrain</td>
+                    <td class="rebel-text">1782710</td>
+                    <td class="imperial-text">Veskaar</td>
+                    <td class="imperial-text">1167353</td>
+                </tr>
+            
+                <tr>
+                    <td class="rebel-text">Revenant</td>
+                    <td class="rebel-text">993478</td>
+                    <td class="imperial-text">Abraxas</td>
+                    <td class="imperial-text">896590</td>
+                </tr>
+            
+                <tr>
+                    <td class="rebel-text">Black-Krrsantan</td>
+                    <td class="rebel-text">410340</td>
+                    <td class="imperial-text">Volkish</td>
+                    <td class="imperial-text">818096</td>
+                </tr>
+            
+                <tr>
+                    <td class="rebel-text">Virael</td>
+                    <td class="rebel-text">333925</td>
+                    <td class="imperial-text">Remis</td>
+                    <td class="imperial-text">576624</td>
+                </tr>
+            
+                <tr>
+                    <td class="rebel-text">Banth</td>
+                    <td class="rebel-text">208205</td>
+                    <td class="imperial-text">ldiot</td>
+                    <td class="imperial-text">451940</td>
+                </tr>
+            
+            </table>
+        </div>
+                        <div class="table-cell">
+            <table id="player-table">
+                <tr><th colspan="4">Top Assists</th></tr>
+                <tr><th colspan="2">Rebel</th><th colspan="2">Imperial</th></tr>
+                <tr><th>Player</th><th>assists</th><th>Player</th><th>assists</th></tr>
+                
+                <tr>
+                    <td class="rebel-text">Claptow</td>
+                    <td class="rebel-text">50</td>
+                    <td class="imperial-text">Veskaar</td>
+                    <td class="imperial-text">132</td>
+                </tr>
+            
+                <tr>
+                    <td class="rebel-text">Orta</td>
+                    <td class="rebel-text">40</td>
+                    <td class="imperial-text">Abraxas</td>
+                    <td class="imperial-text">130</td>
+                </tr>
+            
+                <tr>
+                    <td class="rebel-text">Revenant</td>
+                    <td class="rebel-text">36</td>
+                    <td class="imperial-text">Remis</td>
+                    <td class="imperial-text">95</td>
+                </tr>
+            
+                <tr>
+                    <td class="rebel-text">Virael</td>
+                    <td class="rebel-text">30</td>
+                    <td class="imperial-text">Volkish</td>
+                    <td class="imperial-text">85</td>
+                </tr>
+            
+                <tr>
+                    <td class="rebel-text">Telrain</td>
+                    <td class="rebel-text">26</td>
+                    <td class="imperial-text">Opeth</td>
+                    <td class="imperial-text">38</td>
+                </tr>
+            
+            </table>
+        </div>
+                    </div>
+                    <div class="table-row">
+                        <div class="table-cell" style="margin-right: 25px;">
+            <table id="player-table">
+                <tr><th colspan="4">Top Healing</th></tr>
+                <tr><th colspan="2">Rebel</th><th colspan="2">Imperial</th></tr>
+                <tr><th>Player</th><th>healing</th><th>Player</th><th>healing</th></tr>
+                
+                <tr>
+                    <td class="rebel-text">Revenant</td>
+                    <td class="rebel-text">2051187</td>
+                    <td class="imperial-text">Volkish</td>
+                    <td class="imperial-text">860496</td>
+                </tr>
+            
+                <tr>
+                    <td class="rebel-text">Telrain</td>
+                    <td class="rebel-text">850779</td>
+                    <td class="imperial-text">Remis</td>
+                    <td class="imperial-text">738407</td>
+                </tr>
+            
+                <tr>
+                    <td class="rebel-text">Beskaar</td>
+                    <td class="rebel-text">557573</td>
+                    <td class="imperial-text">Abraxas</td>
+                    <td class="imperial-text">449338</td>
+                </tr>
+            
+                <tr>
+                    <td class="rebel-text">Black-Krrsantan</td>
+                    <td class="rebel-text">452840</td>
+                    <td class="imperial-text">Kay-Droma</td>
+                    <td class="imperial-text">296591</td>
+                </tr>
+            
+                <tr>
+                    <td class="rebel-text">Banth</td>
+                    <td class="rebel-text">275351</td>
+                    <td class="imperial-text">Veskaar</td>
+                    <td class="imperial-text">268034</td>
+                </tr>
+            
+            </table>
+        </div>
+                        <div class="table-cell">
+            <table id="player-table">
+                <tr><th colspan="4">Top Captures</th></tr>
+                <tr><th colspan="2">Rebel</th><th colspan="2">Imperial</th></tr>
+                <tr><th>Player</th><th>captures</th><th>Player</th><th>captures</th></tr>
+                
+                <tr>
+                    <td class="rebel-text">Telrain</td>
+                    <td class="rebel-text">16</td>
+                    <td class="imperial-text">Volkish</td>
+                    <td class="imperial-text">16</td>
+                </tr>
+            
+                <tr>
+                    <td class="rebel-text">Virael</td>
+                    <td class="rebel-text">10</td>
+                    <td class="imperial-text">Isiw</td>
+                    <td class="imperial-text">15</td>
+                </tr>
+            
+                <tr>
+                    <td class="rebel-text">Black-Krrsantan</td>
+                    <td class="rebel-text">5</td>
+                    <td class="imperial-text">Veskaar</td>
+                    <td class="imperial-text">10</td>
+                </tr>
+            
+                <tr>
+                    <td class="rebel-text">Revenant</td>
+                    <td class="rebel-text">5</td>
+                    <td class="imperial-text">Opeth</td>
+                    <td class="imperial-text">2</td>
+                </tr>
+            
+                <tr>
+                    <td class="rebel-text"></td>
+                    <td class="rebel-text"></td>
+                    <td class="imperial-text"></td>
+                    <td class="imperial-text"></td>
+                </tr>
+            
+            </table>
+        </div>
+                    </div>
+                </div>
+            </div>
         
-            <tr style="color: red">
-                <td>Black-Krrsantan</td>
-                <td>Rebel</td>
-                <td>10</td>
-                <td>5</td>
-                <td>0</td>
-                <td>82068</td>
-                <td>90568</td>
-                <td>1</td>
-            </tr>
-        
-            <tr style="color: red">
-                <td>Virael Beroya</td>
-                <td>Rebel</td>
-                <td>3</td>
-                <td>6</td>
-                <td>2</td>
-                <td>66785</td>
-                <td>28439</td>
-                <td>2</td>
-            </tr>
-        
-            <tr style="color: #1772b4">
-                <td>Farvah</td>
-                <td>Imperial</td>
-                <td>3</td>
-                <td>2</td>
-                <td>3</td>
-                <td>56046</td>
-                <td>32782</td>
-                <td>0</td>
-            </tr>
-        
-            <tr style="color: #1772b4">
-                <td>Enrico Pallazo</td>
-                <td>Imperial</td>
-                <td>1</td>
-                <td>6</td>
-                <td>3</td>
-                <td>51009</td>
-                <td>30246</td>
-                <td>0</td>
-            </tr>
-        
-            <tr style="color: red">
-                <td>Claptow Smith</td>
-                <td>Rebel</td>
-                <td>3</td>
-                <td>10</td>
-                <td>1</td>
-                <td>39786</td>
-                <td>41282</td>
-                <td>0</td>
-            </tr>
-        
-            <tr style="color: #1772b4">
-                <td>Isiw Faewolda</td>
-                <td>Imperial</td>
-                <td>2</td>
-                <td>1</td>
-                <td>3</td>
-                <td>33733</td>
-                <td>36348</td>
-                <td>3</td>
-            </tr>
-        
-            <tr style="color: red">
-                <td>Orta Nevander</td>
-                <td>Rebel</td>
-                <td>0</td>
-                <td>8</td>
-                <td>4</td>
-                <td>15465</td>
-                <td>29311</td>
-                <td>0</td>
-            </tr>
-        
-            <tr style="color: red">
-                <td>Nokia</td>
-                <td>Rebel</td>
-                <td>0</td>
-                <td>0</td>
-                <td>0</td>
-                <td>0</td>
-                <td>0</td>
-                <td>0</td>
-            </tr>
-        
-            <tr style="color: #1772b4">
-                <td>Dazo</td>
-                <td>Imperial</td>
-                <td>0</td>
-                <td>0</td>
-                <td>0</td>
-                <td>0</td>
-                <td>0</td>
-                <td>0</td>
-            </tr>
-        
-                    </table>
                 </body>
             </html>
         
