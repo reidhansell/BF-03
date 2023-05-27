@@ -144,7 +144,7 @@ class WeeklyExport {
         fs.writeFileSync('table.html', html);
 
         // Launch Puppeteer, go to the page
-        const browser = await puppeteer.launch({ defaultViewport: { width: 1400, height: 600 } });
+        const browser = await puppeteer.launch({ defaultViewport: { width: 1400, height: 600 }, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
         const page = await browser.newPage();
         await page.goto('file://' + path.resolve('table.html'));
 
