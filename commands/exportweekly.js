@@ -11,8 +11,6 @@ module.exports = {
         const weeklyExport = new WeeklyExport();
 
         try {
-            // Generate and send the weekly export summary
-            let summaryStr = weeklyExport.generateWeeklySummary();
 
             // Fetch all channels from Discord directly, bypassing the cache
             let channels = await interaction.guild.channels.fetch();
