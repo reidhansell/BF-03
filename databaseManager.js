@@ -49,7 +49,6 @@ function getExportsByWeek(startDate) {
 }
 
 function getTopPlayersByStat(exports, faction, stat, limit) {
-    console.log(exports);
 
     const filteredExports = exports.filter((exportObj) => exportObj.players.some((player) => player.faction === faction));
 
@@ -73,8 +72,6 @@ function getTopPlayersByStat(exports, faction, stat, limit) {
     players = Array.from(playerMap.values());
 
     players.sort((a, b) => b[stat] - a[stat]);
-
-    console.log(players);
 
     return players.slice(0, limit);
 }
