@@ -122,43 +122,49 @@ client.on("channelCreate", channel => {
 })
 
 client.on('messageCreate', async message => {
-    if (message.channel.name === 'exports' && message.attachments.size > 0) {
-        message.attachments.forEach(attachment => {
-            if (attachment.name.endsWith('.html')) {
-                axios.get(attachment.url)
-                    .then(response => {
-                        const $ = cheerio.load(response.data);
-                        let players = [];
-                        $('table tr').each((i, row) => {
-                            if (i > 0) { // Skip header row
-                                let cells = $(row).find('td');
-                                let player = new Player({
-                                    name: $(cells[0]).text(),
-                                    faction: $(cells[1]).text(),
-                                    kills: parseInt($(cells[2]).text()),
-                                    assists: parseInt($(cells[3]).text()),
-                                    deaths: parseInt($(cells[4]).text()),
-                                    damage: parseInt($(cells[5]).text()),
-                                    healing: parseInt($(cells[6]).text()),
-                                    captures: parseInt($(cells[7]).text())
-                                });
-                                players.push(player);
-                            }
-                        });
-                        let exportObj = new Export(players);
-                        // Save to the database
-                        addExport(exportObj);
+    if (message.channel.name === 'exports') {
+        if (message.attachments.size > 0) {
+            message.attachments.forEach(attachment => {
+                if (attachment.name.endsWith('.html')) {
+                    axios.get(attachment.url)
+                        .then(response => {
+                            const $ = cheerio.load(response.data);
+                            let players = [];
+                            $('table tr').each((i, row) => {
+                                if (i > 0) { // Skip header row
+                                    let cells = $(row).find('td');
+                                    let player = new Player({
+                                        name: $(cells[0]).text(),
+                                        faction: $(cells[1]).text(),
+                                        kills: parseInt($(cells[2]).text()),
+                                        assists: parseInt($(cells[3]).text()),
+                                        deaths: parseInt($(cells[4]).text()),
+                                        damage: parseInt($(cells[5]).text()),
+                                        healing: parseInt($(cells[6]).text()),
+                                        captures: parseInt($(cells[7]).text())
+                                    });
+                                    players.push(player);
+                                }
+                            });
+                            let exportObj = new Export(players);
+                            // Save to the database
+                            addExport(exportObj);
 
-                        // Send summary to #exports channel
-                        // Assuming summary() is a method in the Export class that returns a summary string
-                        message.delete();
-                        exportObj.summary().then(imagePath => {
-                            message.channel.send({ content: `Export added`, files: [{ attachment: imagePath, name: 'table.png' }] });
-                        }).catch(console.error);
-                    })
-                    .catch(console.error);
-            }
-        });
+                            // Send summary to #exports channel
+                            message.delete();
+                            exportObj.summary().then(imagePath => {
+                                message.channel.send({ content: `Export added`, files: [{ attachment: imagePath, name: 'table.png' }] });
+                            }).catch(console.error);
+                        })
+                        .catch(console.error);
+                }
+                else {
+                    message.delete();
+                }
+            });
+        } else {
+            message.delete();
+        }
     }
 });
 
