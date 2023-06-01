@@ -158,10 +158,14 @@ client.on('messageCreate', async message => {
                         })
                         .catch(console.error);
                 }
-                else {
+                else if (message.author.id === '1105048396475150447') {
+
+                } else {
                     message.delete();
                 }
             });
+        } else if (message.author.id === '1105048396475150447') {
+
         } else {
             message.delete();
         }
