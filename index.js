@@ -71,6 +71,15 @@ function startCollectors() {
             let matchObject = getMatchByButton(interaction.customId);
             let matchMessage = await interaction.channel.messages.fetch(matchObject.message_id);
             if (interaction.customId === matchObject.rebel_queue_id || interaction.customId === matchObject.imperial_queue_id) {
+                const rankedRoles = ["Spiker", "Nuker", "Commando", "Ranged Support", "Melee Support", "Melee Carry"];
+                await interaction.guild.members.fetch(interaction.user.id)
+                    .then(member => {
+                        if (matchObject.ranked === true && !member.roles.cache.some(role => rankedRoles.includes(role.name))) {
+                            interaction.editReply({ content: "Please select a valid role in <#1106719576508608523> before queueing for a ranked match." });
+                            return;
+                        }
+                    })
+                    .catch(console.error);
                 result = matchObject.queuePlayer(interaction.user.id, (interaction.customId === matchObject.rebel_queue_id ? "Rebel" : "Imperial"));
                 if (result === "Queue full." || result === "Already in queue.") {
                     await interaction.editReply({ ephemeral: true, content: result });

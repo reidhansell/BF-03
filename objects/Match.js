@@ -15,6 +15,7 @@ class Match {
     start_match_id = "";
     started = false;
     custom_time = false;
+    ranked = false;
 
     constructor(match) {
         this.url = match.url;
@@ -31,6 +32,7 @@ class Match {
         this.start_match_id = match.start_match_id;
         this.started = match.started;
         this.custom_time = match.custom_time;
+        this.ranked = match.ranked;
     }
 
     setTime(time) {
@@ -129,7 +131,9 @@ class Match {
     }
 
     toString() {
-        const contractContent = "**BATTLEFIELD MATCHMAKING**\n"
+        const matchContent = "**" + (this.ranked ? "COMPETETIVE" : "CASUAL") + " BATTLEFIELD MATCHMAKING**\n"
+            + (this.ranked ? "*Competetive requirements: <#1106719576508608523>*\n" : "")
+            + (this.ranked ? "Captain: <@" + this.initiator_id + ">\n" : "")
             + "Status: " + this.getStatus() + "\n"
             + (this.custom_time ? ("Time: " + this.time) : ("Time: <t:" + this.time + ":T>")) + "\n"
             + "Location: " + this.location + "\n"
@@ -143,7 +147,7 @@ class Match {
             + (this.player_ids[5] === "" ? "EMPTY" : ("<@" + this.player_ids[5] + ">")) + " --- " + (this.player_ids[13] === "" ? "EMPTY\n" : ("<@" + this.player_ids[13] + ">\n"))
             + (this.player_ids[6] === "" ? "EMPTY" : ("<@" + this.player_ids[6] + ">")) + " --- " + (this.player_ids[14] === "" ? "EMPTY\n" : ("<@" + this.player_ids[14] + ">\n"))
             + (this.player_ids[7] === "" ? "EMPTY" : ("<@" + this.player_ids[7] + ">")) + " --- " + (this.player_ids[15] === "" ? "EMPTY\n" : ("<@" + this.player_ids[15] + ">\n"))
-        return contractContent;
+        return matchContent;
     }
 
     toButtons() {

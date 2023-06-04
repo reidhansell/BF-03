@@ -7,6 +7,9 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('match')
         .setDescription('Begin matchmaking for battlefields!')
+        .addBooleanOption(option =>
+            option.setName('competetive')
+                .setDescription('Is this a competetive match?'))
         .addStringOption(option =>
             option.setName('time')
                 .setDescription('What time will this match occur? (Default: now)')
@@ -19,6 +22,14 @@ module.exports = {
                 .setMaxLength(50)),
     async execute(interaction) {
         await interaction.deferReply({ ephemeral: true });
+        await interaction.guild.members.fetch(interaction.user.id)
+            .then(member => {
+                if (interaction.options.getBoolean("competetive") && !member.roles.cache.some(role => role.name === "Captain")) {
+                    interaction.editReply({ content: "Only captains may create competetive matches." });
+                    return;
+                }
+            })
+            .catch(console.error);
         let message = await interaction.guild.channels.cache.find(channel => channel.name === "battlefields").send("Generating match...");
         let url = message.url;
         let message_id = message.id;
@@ -59,6 +70,7 @@ module.exports = {
             "start_match_id": uuidv4(),
             "started": false,
             "custom_time": (interaction.options.getString("time") ? true : false),
+            "ranked": interaction.options.getBoolean("competetive")
         });
 
 
