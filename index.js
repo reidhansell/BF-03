@@ -71,7 +71,7 @@ function startCollectors() {
             let matchObject = getMatchByButton(interaction.customId);
             let matchMessage = await interaction.channel.messages.fetch(matchObject.message_id);
             if (interaction.customId === matchObject.rebel_queue_id || interaction.customId === matchObject.imperial_queue_id) {
-                const rankedRoles = ["Spiker", "Nuker", "Commando", "Ranged Support", "Melee Support", "Melee Carry"];
+                const rankedRoles = ["Sniper", "Commando", "Ranged Carry", "Ranged Support", "Melee Carry", "Melee Support"];
                 await interaction.guild.members.fetch(interaction.user.id)
                     .then(member => {
                         if (matchObject.ranked === true && !member.roles.cache.some(role => rankedRoles.includes(role.name))) {
