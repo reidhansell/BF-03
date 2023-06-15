@@ -108,6 +108,7 @@ config.json
 
 # Database
 battlefield.db
+battlefields.db
 
 # Image generation files
 table.html

@@ -2,6 +2,7 @@ class Player {
     constructor(playerObj) {
         this.name = playerObj.name;
         this.faction = playerObj.faction;
+        this.battlefield_id = playerObj.battlefield_id;
         this.kills = playerObj.kills || 0;
         this.assists = playerObj.assists || 0;
         this.deaths = playerObj.deaths || 0;

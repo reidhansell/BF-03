@@ -1,27 +1,36 @@
-// Require the necessary discord.js classes
 const fs = require('node:fs');
 const path = require('node:path');
-const { Client, GatewayIntentBits, Collection, ComponentType, Attachment } = require('discord.js');
+const { Client, GatewayIntentBits, Collection, ComponentType } = require('discord.js');
 const { token } = require('./config.json');
-const { updateMatch, getMatchByButton, addExport } = require('./databaseManager');
+const { getMatchByButton } = require('./queries/match');
+const { addBattlefield } = require('./queries/battlefield');
 const axios = require('axios');
 const cheerio = require('cheerio');
-const Export = require("./objects/Export");
-const Player = require("./objects/Player");
+const Battlefield = require("./classes/Battlefield");
+const BattlefieldPlayer = require("./classes/BattlefieldPlayer");
+const cron = require('node-cron');
+const { generateWeeklySummary } = require('./tools/weeklySummary');
+const { initDB } = require('./tools/databaseInitializer');
+const _ = require('lodash');
 
-// Create a new client instance
+initDB();
+
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
 
 const eventsPath = path.join(__dirname, 'events');
 const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith('.js'));
 
 for (const file of eventFiles) {
-    const filePath = path.join(eventsPath, file);
-    const event = require(filePath);
-    if (event.once) {
-        client.once(event.name, (...args) => event.execute(...args));
-    } else {
-        client.on(event.name, (...args) => event.execute(...args));
+    try {
+        const filePath = path.join(eventsPath, file);
+        const event = require(filePath);
+        if (event.once) {
+            client.once(event.name, (...args) => event.execute(...args));
+        } else {
+            client.on(event.name, (...args) => event.execute(...args));
+        }
+    } catch (error) {
+        console.error(`Failed to load event ${file}: ${error}`);
     }
 }
 
@@ -31,118 +40,159 @@ const commandsPath = path.join(__dirname, 'commands');
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
 
 for (const file of commandFiles) {
-    const filePath = path.join(commandsPath, file);
-    const command = require(filePath);
-    // Set a new item in the Collection with the key as the command name and the value as the exported module
-    if ('data' in command && 'execute' in command) {
-        client.commands.set(command.data.name, command);
-    } else {
-        console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+    try {
+        const filePath = path.join(commandsPath, file);
+        const command = require(filePath);
+        if ('data' in command && 'execute' in command) {
+            client.commands.set(command.data.name, command);
+        } else {
+            console.error(`The command at ${filePath} is missing a required "data" or "execute" property.`);
+        }
+    } catch (error) {
+        console.error(`Failed to load command ${file}: ${error}`);
     }
 }
 
-// Log in to Discord with your client's token
-client.login(token);
+client.login(token).catch(error => {
+    console.error(`Failed to login: ${error}`);
+});
 
-function startCollectors() {
+async function startCollectors() {
+    try {
+        const textChannels = [];
 
-    var guilds = client.guilds.cache;
-    guilds = guilds.values();
-    var textChannels = []
-    for (const guild of guilds) {
-        var guildTextChannels = guild.channels.cache;
-        guildTextChannels.sweep(channel => channel.name != "battlefields");
-        guildTextChannels = guildTextChannels.values();
-        for (const textChannel of guildTextChannels) {
-            textChannels.push(textChannel);
-        }
-    }
-
-    for (const channel of textChannels) {
-        const collector = channel.createMessageComponentCollector({ componentType: ComponentType.Button });
-
-        collector.on('collect', async (interaction) => {
-            try {
-                await interaction.deferReply({ ephemeral: true });
-            } catch (error) {
-                console.log("Interaction could not be deferred.");
-                return;
+        for (const guild of client.guilds.cache.values()) {
+            const guildTextChannels = guild.channels.cache;
+            guildTextChannels.sweep(channel => channel.name != "battlefields");
+            for (const textChannel of guildTextChannels.values()) {
+                textChannels.push(textChannel);
             }
-            let matchObject = getMatchByButton(interaction.customId);
-            let matchMessage = await interaction.channel.messages.fetch(matchObject.message_id);
-            if (interaction.customId === matchObject.rebel_queue_id || interaction.customId === matchObject.imperial_queue_id) {
-                const rankedRoles = ["Sniper", "Commando", "Ranged Carry", "Ranged Support", "Melee Carry", "Melee Support"];
-                await interaction.guild.members.fetch(interaction.user.id)
-                    .then(member => {
-                        if (matchObject.ranked === true && !member.roles.cache.some(role => rankedRoles.includes(role.name))) {
-                            interaction.editReply({ content: "Please select a valid role in <#1106719576508608523> before queueing for a ranked match." });
+        }
+
+        for (const channel of textChannels) {
+            const collector = channel.createMessageComponentCollector({ componentType: ComponentType.Button });
+
+            collector.on('collect', async (interaction) => {
+                try {
+                    await interaction.deferReply({ ephemeral: true });
+                    let matchObject = getMatchByButton(interaction.customId);
+                    let matchMessage = await interaction.channel.messages.fetch(matchObject.message_id);
+                    if (interaction.customId === matchObject.rebel_queue_button_id || interaction.customId === matchObject.imperial_queue_button_id) {
+                        const competitiveRoles = ["Sniper", "Commando", "Ranged Carry", "Ranged Support", "Melee Carry", "Melee Support"];
+                        const member = await interaction.guild.members.fetch(interaction.user.id);
+                        if (matchObject.is_competitive === 1 && !member.roles.cache.some(role => competitiveRoles.includes(role.name))) {
+                            await interaction.editReply({ content: "Please select a valid role in <#1106719576508608523> before queueing for a competitive match." });
                             return;
                         }
-                    })
-                    .catch(console.error);
-                result = matchObject.queuePlayer(interaction.user.id, (interaction.customId === matchObject.rebel_queue_id ? "Rebel" : "Imperial"));
-                if (result === "Queue full." || result === "Already in queue.") {
-                    await interaction.editReply({ ephemeral: true, content: result });
-                } else {
-                    updateMatch(matchObject);
-                    await matchMessage.edit({ content: matchObject.toString(), components: [matchObject.toButtons()] });
-                    await interaction.editReply({ ephemeral: true, content: "Added to queue." });
+
+                        let result = matchObject.queuePlayer(interaction.user.id, (interaction.customId === matchObject.rebel_queue_button_id ? "Rebel" : "Imperial"));
+                        if (result === "Queue full." || result === "Already in queue.") {
+                            await interaction.editReply({ ephemeral: true, content: result });
+                        } else {
+                            await matchMessage.edit({ content: matchObject.toString(), components: [matchObject.toButtons()] });
+                            await interaction.editReply({ ephemeral: true, content: "Added to queue." });
+                        }
+                    } else if (interaction.customId === matchObject.dequeue_button_id) {
+                        let result = matchObject.dequeuePlayer(interaction.user.id);
+                        if (result === "Player not in queue.") {
+                            await interaction.editReply({ ephemeral: true, content: result });
+                            return;
+                        }
+                        if (matchObject.isEmpty()) {
+                            await interaction.editReply({ ephemeral: true, content: "Removed from queue. The match was empty, so it was deleted." });
+                            await matchMessage.delete();
+                        } else {
+                            await matchMessage.edit({ content: matchObject.toString(), components: [matchObject.toButtons()] });
+                            await interaction.editReply({ ephemeral: true, content: "Removed from queue." });
+                        }
+                    }
+                } catch (error) {
+                    console.error("Interaction failed with error:", error);
                 }
-            }
-            else if (interaction.customId === matchObject.dequeue_id) {
-                matchObject.dequeuePlayer(interaction.user.id);
-                updateMatch(matchObject);
-                if (matchObject.isEmpty()) {
-                    await interaction.editReply({ ephemeral: true, content: "Removed from queue. The match was empty, so it was deleted." });
-                    await matchMessage.delete();
-                } else {
-                    await matchMessage.edit({ content: matchObject.toString(), components: [matchObject.toButtons()] });
-                    await interaction.editReply({ ephemeral: true, content: "Removed from queue." });
-                }
-            }
-            else if (interaction.customId === matchObject.start_match_id) {
-                if (interaction.user.id != matchObject.initiator_id) {
-                    await interaction.editReply({ ephemeral: true, content: "You cannot start a match that you did not initiate." });
-                    return;
-                }
-                matchObject.start();
-                updateMatch(matchObject);
-                await matchMessage.edit({ content: matchObject.toString(), components: [] });
-                await interaction.editReply({ ephemeral: true, content: "Match started." });
-            }
+            });
         }
-        );
-        console.log("collectors are running on in all known guilds");
+    } catch (error) {
+        console.error("Failed to start collectors: ", error);
     }
+    console.log("collectors are running");
+}
+
+async function postWeeklySummary() {
+    client.guilds.cache.forEach(async (guild) => {
+        await guild.channels.fetch();
+
+        let casualChannel = guild.channels.cache.find(channel => channel.name === "weekly-summary" && channel.parent && channel.parent.name === "Casual");
+        let competitiveChannel = guild.channels.cache.find(channel => channel.name === "weekly-summary" && channel.parent && channel.parent.name === "Competitive");
+
+        if (casualChannel) {
+            try {
+                const casualSummaryPath = await generateWeeklySummary(false);
+                await casualChannel.send({
+                    content: 'The weekly results are in for Casual!',
+                    files: [{ attachment: casualSummaryPath, name: 'table.png' }],
+                });
+            } catch (error) {
+                console.error(`Failed to send weekly summary to guild ${guild.id} for Casual: ${error}`);
+            }
+        } else {
+            console.error("No Casual summary channel found");
+        }
+
+        if (competitiveChannel) {
+            try {
+                const competitiveSummaryPath = await generateWeeklySummary(true);
+                await competitiveChannel.send({
+                    content: 'The weekly results are in for Competitive!',
+                    files: [{ attachment: competitiveSummaryPath, name: 'table.png' }],
+                });
+            } catch (error) {
+                console.error(`Failed to send weekly summary to guild ${guild.id} for Competitive: ${error}`);
+            }
+        } else {
+            console.error("No Competitive summary channel found");
+        }
+    });
 }
 
 client.on('ready', () => {
     startCollectors();
+    cron.schedule('0 12 * * 0', () => {
+        postWeeklySummary();
+    });
 });
 
-client.on("guildCreate", guild => {
-    startCollectors();
-})
-
-client.on("channelCreate", channel => {
-    if (channel.name === "battlefields") {
-        startCollectors();
-    }
-})
+const cooldowns = new Map();
 
 client.on('messageCreate', async message => {
-    if (message.channel.name === 'exports') {
-        if (message.attachments.size > 0) {
-            message.attachments.forEach(attachment => {
-                if (attachment.name.endsWith('.html')) {
-                    axios.get(attachment.url)
-                        .then(response => {
+    try {
+
+        if (message.channel.name === 'exports') {
+            if (message.attachments.size > 0) {
+                message.attachments.forEach(async attachment => {
+                    try {
+                        if (attachment.name.endsWith('.html')) {
+                            if (cooldowns.has(message.channel.id)) {
+                                const lastCommand = cooldowns.get(message.channel.id);
+                                const timeDifference = Date.now() - lastCommand;
+                                if (timeDifference < 60000) {
+                                    await message.reply('Please wait 60 seconds before uploading another export.');
+                                    return message.delete();
+                                }
+                            }
+                            const response = await axios.get(attachment.url);
                             const $ = cheerio.load(response.data);
                             let players = [];
+
+                            const headers = ['Name', 'Faction', 'Kills', 'Assists', 'Deaths', 'Damage', 'Healing', 'Captures'];
+                            const tableHeaders = $('table tr').first().children().map((i, th) => $(th).text()).toArray();
+                            if (!_.isEqual(headers, tableHeaders)) {
+                                return message.reply('Incorrect export format.');
+                            }
+
                             $('table tr').each((i, row) => {
-                                if (i > 0) { // Skip header row
+                                if (i > 0) {
                                     let cells = $(row).find('td');
-                                    let player = new Player({
+                                    let player = new BattlefieldPlayer({
                                         name: $(cells[0]).text(),
                                         faction: $(cells[1]).text(),
                                         kills: parseInt($(cells[2]).text()),
@@ -155,29 +205,26 @@ client.on('messageCreate', async message => {
                                     players.push(player);
                                 }
                             });
-                            let exportObj = new Export(players);
-                            // Save to the database
-                            addExport(exportObj);
-
-                            // Send summary to #exports channel
-                            message.delete();
-                            exportObj.summary().then(imagePath => {
-                                message.channel.send({ content: `Export added`, files: [{ attachment: imagePath, name: 'table.png' }] });
+                            const parent = await message.guild.channels.fetch(message.channel.parentId);
+                            let battlefieldObj = new Battlefield(players, Math.floor(Date.now() / 1000), parent.name.toLowerCase() === "competitive" ? 1 : 0, null);
+                            addBattlefield(battlefieldObj);
+                            cooldowns.set(message.channel.id, Date.now());
+                            await message.delete();
+                            battlefieldObj.summary().then(imagePath => {
+                                message.channel.send({ content: `Battlefield recorded`, files: [{ attachment: imagePath, name: 'table.png' }] });
                             }).catch(console.error);
-                        })
-                        .catch(console.error);
-                }
-                else if (message.author.id === '1105048396475150447') {
-
-                } else {
-                    message.delete();
-                }
-            });
-        } else if (message.author.id === '1105048396475150447') {
-
-        } else {
-            message.delete();
+                        } else if (!(message.author.id === client.user.id)) {
+                            await message.delete();
+                        }
+                    } catch (error) {
+                        console.error(`Failed to process attachment ${attachment.name}: ${error}`);
+                    }
+                });
+            } else if (!(message.author.id === client.user.id)) {
+                await message.delete();
+            }
         }
+    } catch (error) {
+        console.error(`Message creation failed with error: ${error}`);
     }
 });
-
