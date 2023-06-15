@@ -166,6 +166,7 @@ async function deleteExpiredMatches() {
                     try {
                         const message = await channel.messages.fetch(match.message_id);
                         await message.delete();
+                        setRemovedStatus(match.match_id);
                     } catch (error) {
                         console.error("Message not found, setting is_removed to true for match with id: ", match.match_id);
                         setRemovedStatus(match.match_id);
