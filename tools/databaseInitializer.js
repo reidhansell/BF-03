@@ -12,7 +12,8 @@ function initDB() {
         rebel_queue_button_id TEXT,
         imperial_queue_button_id TEXT,
         dequeue_button_id TEXT,
-        is_competitive BOOLEAN
+        is_competitive BOOLEAN,
+        is_removed BOOLEAN DEFAULT FALSE
         );`
     );
     createMatchTable.run();
@@ -52,10 +53,11 @@ function initDB() {
     createBattlefieldPlayerTable.run();
 
     const createScheduleTable = db.prepare(`CREATE TABLE IF NOT EXISTS match_schedule (
-        id INTEGER PRIMARY KEY, 
+        schedule_id INTEGER PRIMARY KEY, 
         competitive INTEGER, 
         schedule_time TEXT, 
-        initiator_discord_id TEXT
+        initiator_discord_id TEXT,
+        guild_id TEXT
         );`
     );
     createScheduleTable.run();

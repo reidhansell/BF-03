@@ -1,5 +1,5 @@
 const { db } = require("../tools/databaseInitializer.js")
-const Match = require("../classes/Match");
+const MatchPlayer = require("../classes/MatchPlayer.js")
 
 function openMatch(match) {
     const openMatch = db.prepare(`INSERT INTO match (
@@ -34,6 +34,9 @@ function openMatch(match) {
 }
 
 function addPlayerToMatch(playerDiscordId, matchId, faction) {
+    console.log(playerDiscordId);
+    console.log(matchId);
+    console.log(faction);
     try {
         const addPlayerToMatch = db.prepare('INSERT OR IGNORE INTO match_player (player_discord_id, match_id, faction) VALUES (?, ?, ?)');
         addPlayerToMatch.run(playerDiscordId, matchId, faction);
@@ -57,9 +60,9 @@ function removePlayerFromMatch(playerDiscordId, matchId) {
 
 function getPlayersByMatch(matchId) {
     try {
-        const getPlayers = db.prepare('SELECT player_discord_id FROM match_player WHERE match_id = ?');
+        const getPlayers = db.prepare('SELECT * FROM match_player WHERE match_id = ?');
         let players = getPlayers.all(matchId);
-        return players.map(player => player.player_discord_id);
+        return players.map(player => new MatchPlayer(player.player_discord_id, player.faction));
     } catch (err) {
         console.error(err);
         return null;
@@ -69,7 +72,25 @@ function getPlayersByMatch(matchId) {
 function getMatchByButton(button_id) {
     const getMatch = db.prepare("SELECT * FROM match WHERE rebel_queue_button_id=? OR imperial_queue_button_id=? OR dequeue_button_id=?");
     let match = getMatch.get(button_id, button_id, button_id);
-    return new Match(match);
+    return match;
+}
+
+function getExpiredMatches() {
+    const getPastMatches = db.prepare(`
+        SELECT * FROM match 
+        WHERE (strftime('%s', 'now') - time) > 3600 AND is_removed = 0
+    `);
+    let matches = getPastMatches.all();
+    return matches;
+}
+
+function setRemovedStatus(matchId) {
+    try {
+        const setRemoved = db.prepare('UPDATE match SET is_removed = 1 WHERE match_id = ?');
+        setRemoved.run(matchId);
+    } catch (err) {
+        console.error("Failed to set is_removed status:", err);
+    }
 }
 
 module.exports = {
@@ -77,5 +98,7 @@ module.exports = {
     getMatchByButton,
     addPlayerToMatch,
     removePlayerFromMatch,
-    getPlayersByMatch
+    getPlayersByMatch,
+    getExpiredMatches,
+    setRemovedStatus
 }

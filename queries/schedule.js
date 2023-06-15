@@ -1,28 +1,31 @@
 const { db } = require("../tools/databaseInitializer.js")
 
-function addScheduledMatch(match_type, schedule_time) {
-    const addScheduledMatch = db.prepare("INSERT INTO schedule (match_type, schedule_time) VALUES (?, ?)");
-    addScheduledMatch.run(match_type, schedule_time);
+function addScheduledMatch(isCompetitive, scheduleTime, initiatorDiscordId, guild_id) {
+    const addScheduledMatch = db.prepare("INSERT INTO match_schedule (competitive, schedule_time, initiator_discord_id, guild_id) VALUES (?, ?, ?, ?)");
+    addScheduledMatch.run(isCompetitive, scheduleTime, initiatorDiscordId, guild_id);
 }
 
 function getScheduledMatches() {
-    const getScheduledMatches = db.prepare("SELECT * FROM schedule");
+    const getScheduledMatches = db.prepare("SELECT * FROM match_schedule");
     return getScheduledMatches.all().map(row => ({
-        id: row.id,
-        match_type: row.match_type,
-        schedule_time: new Date(row.schedule_time),
+        schedule_id: row.schedule_id,
+        competitive: row.competitive,
+        schedule_time: row.schedule_time,
+        initiator_discord_id: row.initiator_discord_id,
+        guild_id: row.guild_id
     }));
 }
 
-function updateMatchSchedule(id) {
-    const schedule_time = new Date();
-    schedule_time.setDate(schedule_time.getDate() + 7);
-    const updateMatchSchedule = db.prepare("UPDATE schedule SET schedule_time = ? WHERE id = ?");
-    updateMatchSchedule.run(schedule_time.toISOString(), id);
+function updateMatchSchedule(match) {
+    match.schedule_time = (Number(match.schedule_time) + Math.floor(7 * 24 * 60 * 60)).toString();
+    const updateMatchSchedule = db.prepare("UPDATE match_schedule SET schedule_time = ? WHERE schedule_id = ?");
+    updateMatchSchedule.run(match.schedule_time, match.schedule_id);
+    return match;
 }
 
+
 function deleteScheduledMatch(id) {
-    const deleteScheduledMatch = db.prepare("DELETE FROM schedule WHERE id = ?");
+    const deleteScheduledMatch = db.prepare("DELETE FROM match_schedule WHERE schedule_id = ?");
     deleteScheduledMatch.run(id);
 }
 

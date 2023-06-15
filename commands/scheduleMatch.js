@@ -1,9 +1,9 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { db } = require("../tools/databaseInitializer.js")
+const { addScheduledMatch } = require("../queries/schedule.js")
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('schedulematch')
+        .setName('schedule_match')
         .setDescription('Schedule a battlefield match!')
         .addBooleanOption(option =>
             option.setName('competitive')
@@ -11,11 +11,32 @@ module.exports = {
                 .setRequired(true))
         .addStringOption(option =>
             option.setName('time')
-                .setDescription('What time will this match occur? (Format: YYYY-MM-DD HH:MM:SS)')
-                .setRequired(true)),
+                .setDescription('What time will this match occur?')
+                .setRequired(true)
+                .setMaxLength(50)),
     async execute(interaction) {
         await interaction.deferReply({ ephemeral: true });
 
+        const member = await interaction.guild.members.fetch(interaction.user.id);
+        if (!member.roles.cache.some(role => role.name === 'Admin')) {
+            await interaction.editReply({ content: 'Only admins may schedule matches.' });
+            return;
+        }
+
+        const timestamp = interaction.options.getString("time");
+        const discordTimestampRegex = /<t:\d+:[tTdDfFR]>/
+
+        if (!discordTimestampRegex.test(timestamp)) {
+            await interaction.editReply({ content: 'Please enter a valid Discord timestamp.' });
+            return;
+        }
+
+        const scheduleTimeMilliseconds = Number(interaction.options.getString("time").match(/<t:(\d+):[a-zA-Z]>?/)[1]) * 1000;
+
+        if (scheduleTimeMilliseconds <= Date.now()) {
+            await interaction.editReply({ content: 'The match time must be in the future.' });
+            return;
+        }
         await interaction.guild.members.fetch(interaction.user.id)
             .then(member => {
                 if (!member.roles.cache.some(role => role.name === 'Admin')) {
@@ -26,12 +47,10 @@ module.exports = {
             .catch(console.error);
 
         const isCompetitive = interaction.options.getBoolean('competitive') ? 1 : 0;
-        const scheduleTime = interaction.options.getString('time');
+        const scheduleTime = interaction.options.getString("time").match(/<t:(\d+):[a-zA-Z]>?/)[1]
         const initiatorDiscordId = interaction.user.id;
 
-        const insertIntoScheduleTable = db.prepare(`INSERT INTO match_schedule (competitive, schedule_time, initiator_discord_id) VALUES (?, ?, ?)`);
-
-        insertIntoScheduleTable.run(isCompetitive, scheduleTime, initiatorDiscordId);
+        addScheduledMatch(isCompetitive, scheduleTime, initiatorDiscordId, interaction.guild.id);
 
         await interaction.editReply({ content: 'Match scheduled!' });
     },
