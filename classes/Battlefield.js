@@ -2,14 +2,15 @@ const puppeteer = require('puppeteer');
 const fs = require('fs');
 const path = require('path');
 
-
-class Export {
-    constructor(players, date) {
+class Battlefield {
+    constructor(players, time, competitive, location) {
         if (players.length < 8 || players.length > 16) {
             throw new Error('Player list must contain between 8 and 16 players.');
         }
         this.players = players;
-        this.date = date;
+        this.time = time;
+        this.competitive = competitive
+        this.location = location;
     }
 
     centerAlign(value, width) {
@@ -21,7 +22,6 @@ class Export {
     }
 
     async summary() {
-        // Prepare data for the table
         let data = this.players.map(player => `
             <tr style="color: ${player.faction === 'Rebel' ? 'red' : '#1772b4'}">
                 <td>${player.name}</td>
@@ -35,13 +35,12 @@ class Export {
             </tr>
         `).join('');
 
-        // Prepare HTML
         let html = `
             <html>
                 <head>
                     <style>
                         @font-face {
-                            font-family: 'SW'; /*You can use whatever name that you want*/
+                            font-family: 'SW';
                             src: url('./Starjhol.ttf');
                         }
     
@@ -84,7 +83,7 @@ class Export {
                 </head>
                 <body>
                     <div class="banner">
-                        <h1>battlefield report</h1>
+                        <h1>${this.competitive ? "competitive" : "casual"} battlefield report</h1>
                     </div>
                     <table id="player-table">
                         <tr>
@@ -103,41 +102,43 @@ class Export {
             </html>
         `;
 
-        // Write HTML to a file
         fs.writeFileSync('table.html', html);
 
-        // Launch Puppeteer, go to the page
-        const browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
-        const page = await browser.newPage();
-        await page.goto('file://' + path.resolve('table.html'));
+        let browser;
+        try {
+            browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+            const page = await browser.newPage();
+            await page.goto('file://' + path.resolve('table.html'));
 
-        // Get the table height
-        const tableHeight = await page.evaluate(() => document.querySelector('#player-table').clientHeight);
-        const bannerHeight = 60; // Set the banner height (adjust as needed)
-        const viewportHeight = tableHeight + bannerHeight;
+            const tableHeight = await page.evaluate(() => document.querySelector('#player-table').clientHeight);
+            const bannerHeight = 60;
+            const viewportHeight = tableHeight + bannerHeight;
 
-        // Set the viewport height to include the banner
-        await page.setViewport({ width: 800, height: viewportHeight });
+            await page.setViewport({ width: 800, height: viewportHeight });
 
-        // Take a screenshot of the entire page
-        const tableElement = await page.$('#player-table');
-        const tableBoundingBox = await tableElement.boundingBox();
-        const screenshotOptions = {
-            path: 'table.png',
-            clip: {
-                x: tableBoundingBox.x,
-                y: tableBoundingBox.y - bannerHeight,
-                width: tableBoundingBox.width,
-                height: tableBoundingBox.height + bannerHeight
+            const tableElement = await page.$('#player-table');
+            const tableBoundingBox = await tableElement.boundingBox();
+            const screenshotOptions = {
+                path: 'table.png',
+                clip: {
+                    x: tableBoundingBox.x,
+                    y: tableBoundingBox.y - bannerHeight,
+                    width: tableBoundingBox.width,
+                    height: tableBoundingBox.height + bannerHeight
+                }
+            };
+            await page.screenshot(screenshotOptions);
+        } catch (error) {
+            console.error('An error occurred:', error);
+        } finally {
+            if (browser) {
+                await browser.close();
             }
-        };
-        await page.screenshot(screenshotOptions);
-
-        await browser.close();
+        }
 
         return path.resolve('table.png');
     }
 
 }
 
-module.exports = Export;
+module.exports = Battlefield;

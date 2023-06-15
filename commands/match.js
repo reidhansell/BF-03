@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { openMatch } = require('../databaseManager');
-const Match = require("../objects/Match");
+const { openMatch } = require('../queries/match');
+const Match = require("../classes/Match");
 const { v4: uuidv4 } = require('uuid');
 
 module.exports = {
@@ -8,78 +8,59 @@ module.exports = {
         .setName('match')
         .setDescription('Begin matchmaking for battlefields!')
         .addBooleanOption(option =>
-            option.setName('competetive')
-                .setDescription('Is this a competetive match?'))
+            option.setName('competitive')
+                .setDescription('Is this a competitive match?')
+                .setRequired(true))
         .addStringOption(option =>
             option.setName('time')
-                .setDescription('What time will this match occur? (Default: now)')
-                .setRequired(false)
-                .setMaxLength(50))
-        .addStringOption(option =>
-            option.setName('location')
-                .setDescription('Which battlefield will this match be in? (Default: random)')
-                .setRequired(false)
+                .setDescription('What time will this match occur?')
+                .setRequired(true)
                 .setMaxLength(50)),
     async execute(interaction) {
         await interaction.deferReply({ ephemeral: true });
-        await interaction.guild.members.fetch(interaction.user.id)
-            .then(member => {
-                if (interaction.options.getBoolean("competetive") && !member.roles.cache.some(role => role.name === "Captain")) {
-                    interaction.editReply({ content: "Only captains may create competetive matches." });
-                    return;
-                }
-            })
-            .catch(console.error);
-        let message = await interaction.guild.channels.cache.find(channel => channel.name === "battlefields").send("Generating match...");
-        let url = message.url;
-        let message_id = message.id;
-        let channel_id = message.channel.id;
-        let guild_id = message.guild.id;
-        let faction = "";
-        if (interaction.member.roles.cache.some(role => role.name === "Rebel" && role.guild.id === interaction.guild.id) && !interaction.member.roles.cache.some(role => role.name === "Imperial" && role.guild.id === interaction.guild.id)) {
-            faction = "Rebel";
-        }
-        else if (interaction.member.roles.cache.some(role => role.name === "Imperial" && role.guild.id === interaction.guild.id) && !interaction.member.roles.cache.some(role => role.name === "Rebel" && role.guild.id === interaction.guild.id)) {
-            faction = "Imperial";
-        }
-        let player_ids = Array(16).fill("");
-        //let player_ids = ["111", "111", "111", "111", "111", "111", "111", "111", "", "", "", "", "", "", "", ""]
-        //let player_ids = ["", "", "", "", "", "", "", "", "111", "111", "111", "111", "111", "111", "111", "111"]
-        //let player_ids = ["111", "111", "111", "111", "111", "111", "111", "111", "111", "111", "111", "111", "111", "111", "111", "111"]
-        //let player_ids = ["111", "111", "111", "111", "", "", "", "", "111", "111", "111", "111", "", "", "", ""]
-        if (faction === "Rebel") {
-            player_ids[0] = interaction.user.id;
-        } else if (faction === "Imperial") {
-            player_ids[8] = interaction.user.id;
-        }
-        let locations = ["Massassi Isle, Yavin IV", "Jungle Warfare, Yavin IV", "Bunker Assault, Endor", "Data Runner, Endor"];
-        let time = Math.floor(new Date().getTime() / 1000);
-        let location = locations[Math.floor(Math.random() * 4)];
-        let match = new Match({
-            "url": url,
-            "message_id": message_id,
-            "channel_id": channel_id,
-            "guild_id": guild_id,
-            "initiator_id": interaction.user.id,
-            "player_ids": player_ids,
-            "location": (interaction.options.getString("location") ? interaction.options.getString("location") : location),
-            "time": (interaction.options.getString("time") ? interaction.options.getString("time") : time),
-            "rebel_queue_id": uuidv4(),
-            "imperial_queue_id": uuidv4(),
-            "dequeue_id": uuidv4(),
-            "start_match_id": uuidv4(),
-            "started": false,
-            "custom_time": (interaction.options.getString("time") ? true : false),
-            "ranked": interaction.options.getBoolean("competetive")
+        let is_competitive = interaction.options.getBoolean("competitive") ? 1 : 0;
+        await interaction.guild.channels.fetch();
+        let targetChannel = interaction.guild.channels.cache.find(channel => {
+            return channel.name === "battlefields" && channel.parent && channel.parent.name === (is_competitive === 1 ? "Competitive" : "Casual");
         });
 
+        const timestamp = interaction.options.getString("time");
+        const discordTimestampRegex = /<t:\d+:[tTdDfFR]>/
 
-        await message.edit({ content: match.toString(), components: [match.toButtons()] });
-        //await message.crosspost();
-        await interaction.editReply({ content: "Match creation successful: " + message.url });
+        if (!discordTimestampRegex.test(timestamp)) {
+            await interaction.editReply({ content: 'Please enter a valid Discord timestamp.' });
+            return;
+        }
 
-        openMatch(match);
+        const member = await interaction.guild.members.fetch(interaction.user.id);
+        if (interaction.options.getBoolean("competitive") && !member.roles.cache.some(role => role.name === "Captain")) {
+            await interaction.editReply({ content: "Only captains may create competitive matches." });
+            return;
+        }
 
+        let message = await targetChannel.send("Generating match...");
+        try {
+            let match = new Match({
+                "match_id": null,
+                "url": message.url,
+                "message_id": message.id,
+                "channel_id": message.channel.id,
+                "guild_id": message.guild.id,
+                "initiator_discord_id": interaction.user.id,
+                "time": interaction.options.getString("time").match(/<t:(\d+):[a-zA-Z]>?/)[1],
+                "rebel_queue_button_id": uuidv4(),
+                "imperial_queue_button_id": uuidv4(),
+                "dequeue_button_id": uuidv4(),
+                "is_competitive": is_competitive
+            });
+            openMatch(match);
+            await message.edit({ content: match.toString(), components: [match.toButtons()] });
+            await interaction.editReply({ content: "Match creation successful: " + message.url });
+        } catch (error) {
+            console.error(error);
+            await message.delete();
+            await interaction.editReply({ content: "There was an error during match creation." });
+        }
     },
 
 };
