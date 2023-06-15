@@ -4,6 +4,7 @@ const { Client, GatewayIntentBits, Collection, ComponentType } = require('discor
 const { token } = require('./config.json');
 const { getMatchByButton, getExpiredMatches, setRemovedStatus } = require('./queries/match');
 const { addBattlefield } = require('./queries/battlefield');
+const { getScheduledMatches, updateMatchSchedule } = require('./queries/schedule');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const Battlefield = require("./classes/Battlefield");
@@ -12,6 +13,7 @@ const cron = require('node-cron');
 const { generateWeeklySummary } = require('./tools/weeklySummary');
 const { initDB } = require('./tools/databaseInitializer');
 const _ = require('lodash');
+const Match = require("./classes/Match");
 
 initDB();
 
@@ -75,7 +77,7 @@ async function startCollectors() {
             collector.on('collect', async (interaction) => {
                 try {
                     await interaction.deferReply({ ephemeral: true });
-                    let matchObject = getMatchByButton(interaction.customId);
+                    let matchObject = new Match(getMatchByButton(interaction.customId));
                     let matchMessage = await interaction.channel.messages.fetch(matchObject.message_id);
                     if (interaction.customId === matchObject.rebel_queue_button_id || interaction.customId === matchObject.imperial_queue_button_id) {
                         const competitiveRoles = ["Sniper", "Commando", "Ranged Carry", "Ranged Support", "Melee Carry", "Melee Support"];
@@ -157,6 +159,7 @@ async function postWeeklySummary() {
 async function deleteExpiredMatches() {
     try {
         const expiredMatches = getExpiredMatches();
+        expiredMatches = expiredMatches.map(match => new Match(match));
 
         for (const match of expiredMatches) {
             const guild = client.guilds.cache.get(match.guild_id);
@@ -179,13 +182,70 @@ async function deleteExpiredMatches() {
     }
 }
 
+async function postMatches() {
+    try {
+        console.log('Running scheduled matches task...');
+
+        const scheduledMatches = getScheduledMatches();
+
+        const weekFromNow = Math.floor(Date.now() / 1000) + Math.floor(7 * 24 * 60 * 60);
+
+        for (let match of scheduledMatches) {
+            if (match.schedule_time <= weekFromNow) {
+
+                const guildId = match.guild_id;
+                const initiatorId = match.initiator_discord_id;
+                const isCompetitive = match.competitive === 1;
+                const timestamp = `<t:${match.schedule_time}:f>`;
+
+                const guild = client.guilds.cache.get(guildId);
+                if (!guild) {
+                    console.log(`Guild ${guildId} not found.`);
+                    continue;
+                }
+
+                const commandName = 'match';
+                const command = client.commands.get(commandName);
+                const member = await guild.members.fetch(initiatorId);
+                if (!member) {
+                    console.log(`Member ${initiatorId} not found in guild ${guildId}.`);
+                    continue;
+                }
+
+                const interaction = {
+                    guild: guild,
+                    member: member,
+                    user: member.user,
+                    commandName: commandName,
+                    options: {
+                        getBoolean: (name) => name === 'competitive' ? isCompetitive : false,
+                        getString: () => timestamp,
+                    },
+                    deferReply: async () => { },
+                    editReply: async () => { },
+                };
+                await command.execute(interaction);
+                match = updateMatchSchedule(match);
+            }
+        }
+
+        console.log('Scheduled matches task completed.');
+    } catch (error) {
+        console.error('Error running scheduled matches task:', error);
+    }
+}
+
+
 client.on('ready', () => {
     startCollectors();
-    cron.schedule('0 12 * * 0', () => {
+    cron.schedule('* * * * *', () => {
         postWeeklySummary();
     });
     cron.schedule('* * * * *', () => {
         deleteExpiredMatches();
+    });
+    cron.schedule('* * * * *', () => {
+        postMatches();
     });
 });
 
@@ -214,7 +274,8 @@ client.on('messageCreate', async message => {
                             const headers = ['Name', 'Faction', 'Kills', 'Assists', 'Deaths', 'Damage', 'Healing', 'Captures'];
                             const tableHeaders = $('table tr').first().children().map((i, th) => $(th).text()).toArray();
                             if (!_.isEqual(headers, tableHeaders)) {
-                                return message.reply('Incorrect export format.');
+                                await message.reply('Incorrect export format.');
+                                return message.delete();
                             }
 
                             $('table tr').each((i, row) => {

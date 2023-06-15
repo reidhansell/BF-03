@@ -1,5 +1,5 @@
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { db } = require("../tools/databaseInitializer.js")
+const { removePlayerFromMatch, getPlayersByMatch, addPlayerToMatch } = require("../queries/match.js")
 const MatchPlayer = require('./MatchPlayer');
 
 class Match {
@@ -17,9 +17,7 @@ class Match {
         this.imperial_queue_button_id = match.imperial_queue_button_id;
         this.dequeue_button_id = match.dequeue_button_id;
         this.is_competitive = match.is_competitive;
-        const getPlayers = db.prepare("SELECT * FROM match_player WHERE match_id = ?");
-        const rows = getPlayers.all(this.match_id);
-        this.matchPlayers = rows.map(row => new MatchPlayer(row.player_discord_id, row.faction));
+        this.matchPlayers = getPlayersByMatch(match.match_id)
     }
 
 
@@ -45,9 +43,12 @@ class Match {
         if ((faction === 'Rebel' && this.matchPlayers.filter(p => p.faction === 'Rebel').length < 8)
             || (faction === 'Imperial' && this.matchPlayers.filter(p => p.faction === 'Imperial').length < 8)) {
             this.matchPlayers.push(new MatchPlayer(player_discord_id, faction));
-            const addPlayer = db.prepare("INSERT INTO match_player (match_id, player_discord_id, faction) VALUES (?, ?, ?)");
-            addPlayer.run(this.match_id, player_discord_id, faction);
-            return "Added to queue.";
+            const result = addPlayerToMatch(player_discord_id, this.match_id, faction);
+            if (result) {
+                return "Added to queue.";
+            } else {
+                return "Error adding to queue"
+            }
         }
         return "Queue full.";
     }
@@ -56,8 +57,7 @@ class Match {
         const playerIndex = this.matchPlayers.findIndex(p => p.player_discord_id === player_discord_id);
         if (playerIndex !== -1) {
             this.matchPlayers.splice(playerIndex, 1);
-            const removePlayer = db.prepare("DELETE FROM match_player WHERE match_id = ? AND player_discord_id = ?");
-            removePlayer.run(this.match_id, player_discord_id);
+            removePlayerFromMatch(player_discord_id, this.match_id);
             return "Player removed from queue."
         }
         return "Player not in queue.";
@@ -68,6 +68,7 @@ class Match {
     }
 
     toString() {
+        console.log(this.matchPlayers);
         const rebels = this.matchPlayers.filter(player => player.faction === 'Rebel');
         const imperials = this.matchPlayers.filter(player => player.faction === 'Imperial');
         const playerLine = (player) => (player ? `<@${player.player_discord_id}>` : 'EMPTY');

@@ -19,10 +19,6 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply({ ephemeral: true });
         let is_competitive = interaction.options.getBoolean("competitive") ? 1 : 0;
-        await interaction.guild.channels.fetch();
-        let targetChannel = interaction.guild.channels.cache.find(channel => {
-            return channel.name === "battlefields" && channel.parent && channel.parent.name === (is_competitive === 1 ? "Competitive" : "Casual");
-        });
 
         const timestamp = interaction.options.getString("time");
         const discordTimestampRegex = /<t:\d+:[tTdDfFR]>/
@@ -32,12 +28,35 @@ module.exports = {
             return;
         }
 
+        const timestampNumber = Number(timestamp.match(/<t:(\d+):[a-zA-Z]>?/)[1]) * 1000;
+
+        if (timestampNumber <= Date.now()) {
+            await interaction.editReply({ content: 'The match time must be in the future.' });
+            return;
+        }
+
         const member = await interaction.guild.members.fetch(interaction.user.id);
         if (interaction.options.getBoolean("competitive") && !member.roles.cache.some(role => role.name === "Captain")) {
             await interaction.editReply({ content: "Only captains may create competitive matches." });
             return;
         }
 
+        await interaction.guild.channels.fetch();
+        let targetChannel = null;
+        interaction.guild.channels.cache.forEach(channel => {
+            if (
+                channel.name === "battlefields" &&
+                channel.parent &&
+                channel.parent.name === (is_competitive === 1 ? "Competitive" : "Casual")
+            ) {
+                targetChannel = channel;
+            }
+        });
+
+        if (!targetChannel) {
+            await interaction.editReply({ content: "Target channel not found." });
+            return;
+        }
         let message = await targetChannel.send("Generating match...");
         try {
             let match = new Match({
