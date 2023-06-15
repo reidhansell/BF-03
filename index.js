@@ -238,13 +238,19 @@ async function postMatches() {
 
 client.on('ready', () => {
     startCollectors();
-    cron.schedule('* * * * *', () => {
+
+    // Post weekly summaries every Sunday at 12:00 PM
+    cron.schedule('0 12 * * 0', () => {
         postWeeklySummary();
     });
-    cron.schedule('* * * * *', () => {
+
+    // Delete expired matches every 10 minutes
+    cron.schedule('*/10 * * * *', () => {
         deleteExpiredMatches();
     });
-    cron.schedule('* * * * *', () => {
+
+    // Post matches every hour
+    cron.schedule('0 * * * *', () => {
         postMatches();
     });
 });
