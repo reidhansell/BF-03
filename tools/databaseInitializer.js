@@ -12,7 +12,8 @@ function initDB() {
         rebel_queue_button_id TEXT,
         imperial_queue_button_id TEXT,
         dequeue_button_id TEXT,
-        is_competitive BOOLEAN
+        is_competitive BOOLEAN,
+        is_removed BOOLEAN DEFAULT FALSE
         );`
     );
     createMatchTable.run();

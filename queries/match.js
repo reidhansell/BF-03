@@ -72,10 +72,30 @@ function getMatchByButton(button_id) {
     return new Match(match);
 }
 
+function getExpiredMatches() {
+    const getPastMatches = db.prepare(`
+        SELECT * FROM match 
+        WHERE (strftime('%s', 'now') - time) > 3600 AND is_removed = 0
+    `);
+    let matches = getPastMatches.all();
+    return matches.map(match => new Match(match));
+}
+
+function setRemovedStatus(matchId) {
+    try {
+        const setRemoved = db.prepare('UPDATE match SET is_removed = 1 WHERE match_id = ?');
+        setRemoved.run(matchId);
+    } catch (err) {
+        console.error("Failed to set is_removed status:", err);
+    }
+}
+
 module.exports = {
     openMatch,
     getMatchByButton,
     addPlayerToMatch,
     removePlayerFromMatch,
-    getPlayersByMatch
+    getPlayersByMatch,
+    getExpiredMatches,
+    setRemovedStatus
 }

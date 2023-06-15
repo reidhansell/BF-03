@@ -2,7 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { Client, GatewayIntentBits, Collection, ComponentType } = require('discord.js');
 const { token } = require('./config.json');
-const { getMatchByButton } = require('./queries/match');
+const { getMatchByButton, getExpiredMatches, setRemovedStatus } = require('./queries/match');
 const { addBattlefield } = require('./queries/battlefield');
 const axios = require('axios');
 const cheerio = require('cheerio');
@@ -154,10 +154,37 @@ async function postWeeklySummary() {
     });
 }
 
+async function deleteExpiredMatches() {
+    try {
+        const expiredMatches = getExpiredMatches();
+
+        for (const match of expiredMatches) {
+            const guild = client.guilds.cache.get(match.guild_id);
+            if (guild) {
+                const channel = guild.channels.cache.get(match.channel_id);
+                if (channel) {
+                    try {
+                        const message = await channel.messages.fetch(match.message_id);
+                        await message.delete();
+                    } catch (error) {
+                        console.error("Message not found, setting is_removed to true for match with id: ", match.match_id);
+                        setRemovedStatus(match.match_id);
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        console.error("Failed to delete expired matches:", error);
+    }
+}
+
 client.on('ready', () => {
     startCollectors();
     cron.schedule('0 12 * * 0', () => {
         postWeeklySummary();
+    });
+    cron.schedule('* * * * *', () => {
+        deleteExpiredMatches();
     });
 });
 
