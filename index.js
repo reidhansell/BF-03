@@ -158,7 +158,7 @@ async function postWeeklySummary() {
 
 async function deleteExpiredMatches() {
     try {
-        const expiredMatches = getExpiredMatches();
+        let expiredMatches = getExpiredMatches();
         expiredMatches = expiredMatches.map(match => new Match(match));
 
         for (const match of expiredMatches) {
