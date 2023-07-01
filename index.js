@@ -101,8 +101,8 @@ async function startCollectors() {
                             return;
                         }
                         if (matchObject.isEmpty()) {
-                            await interaction.editReply({ ephemeral: true, content: "Removed from queue. The match was empty, so it was deleted." });
-                            await matchMessage.delete();
+                            await interaction.editReply({ ephemeral: true, content: "Removed from queue."/* The match was empty, so it was deleted."*/ });
+                            /*await matchMessage.delete();*/
                         } else {
                             await matchMessage.edit({ content: matchObject.toString(), components: [matchObject.toButtons()] });
                             await interaction.editReply({ ephemeral: true, content: "Removed from queue." });
