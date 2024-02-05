@@ -40,8 +40,8 @@ class Match {
         if (this.matchPlayers.some(p => p.player_discord_id === player_discord_id)) {
             return "Already in queue.";
         }
-        if ((faction === 'Rebel' && this.matchPlayers.filter(p => p.faction === 'Rebel').length < 8)
-            || (faction === 'Imperial' && this.matchPlayers.filter(p => p.faction === 'Imperial').length < 8)) {
+        if ((faction === 'Rebel' && this.matchPlayers.filter(p => p.faction === 'Rebel').length < 16)
+            || (faction === 'Imperial' && this.matchPlayers.filter(p => p.faction === 'Imperial').length < 16)) {
             this.matchPlayers.push(new MatchPlayer(player_discord_id, faction));
             const result = addPlayerToMatch(player_discord_id, this.match_id, faction);
             if (result) {
@@ -81,8 +81,11 @@ class Match {
             + "-------------------\n"
             + "Rebels    ---    Imperials:\n";
 
-        for (let i = 0; i < 8; i++) {
+        for (let i = 0; i < 16; i++) {
             matchContent += `${playerLine(rebels[i])} --- ${playerLine(imperials[i])}\n`;
+            if(i === 8){
+                matchContent += "-------------------\n";
+            }
         }
 
         return matchContent;

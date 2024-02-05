@@ -4,8 +4,8 @@ const path = require('path');
 
 class Battlefield {
     constructor(players, time, competitive, location) {
-        if (players.length < 8 || players.length > 16) {
-            throw new Error('Player list must contain between 8 and 16 players.');
+        if (players.length < 8 || players.length > 32) {
+            throw new Error('Player list must contain between 8 and 32 players.');
         }
         this.players = players;
         this.time = time;
