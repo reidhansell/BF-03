@@ -4,16 +4,15 @@ const { Client, GatewayIntentBits, Collection, ComponentType } = require('discor
 const { token } = require('./config.json');
 const { getMatchByButton, getExpiredMatches, setRemovedStatus } = require('./queries/match');
 const { addBattlefield } = require('./queries/battlefield');
-const { getScheduledMatches, updateMatchSchedule } = require('./queries/schedule');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const Battlefield = require("./classes/Battlefield");
 const BattlefieldPlayer = require("./classes/BattlefieldPlayer");
 const cron = require('node-cron');
-const { generateWeeklySummary } = require('./tools/weeklySummary');
 const { initDB } = require('./tools/databaseInitializer');
 const _ = require('lodash');
 const Match = require("./classes/Match");
+const { channelId } = require('./config.json');
 
 initDB();
 
@@ -61,94 +60,40 @@ client.login(token).catch(error => {
 
 async function startCollectors() {
     try {
-        const textChannels = [];
+        const channel = await client.channels.fetch(channelId);
 
-        for (const guild of client.guilds.cache.values()) {
-            const guildTextChannels = guild.channels.cache;
-            guildTextChannels.sweep(channel => channel.name != "battlefields");
-            for (const textChannel of guildTextChannels.values()) {
-                textChannels.push(textChannel);
-            }
-        }
+        const collector = channel.createMessageComponentCollector({ componentType: ComponentType.Button });
 
-        for (const channel of textChannels) {
-            const collector = channel.createMessageComponentCollector({ componentType: ComponentType.Button });
-
-            collector.on('collect', async (interaction) => {
-                try {
-                    await interaction.deferReply({ ephemeral: true });
-                    let matchObject = new Match(getMatchByButton(interaction.customId));
-                    let matchMessage = await interaction.channel.messages.fetch(matchObject.message_id);
-                    if (interaction.customId === matchObject.rebel_queue_button_id || interaction.customId === matchObject.imperial_queue_button_id) {
-                        const competitiveRoles = ["Sniper", "Commando", "Ranged Carry", "Ranged Support", "Melee Carry", "Melee Support"];
-                        const member = await interaction.guild.members.fetch(interaction.user.id);
-                        if (matchObject.is_competitive === 1 && !member.roles.cache.some(role => competitiveRoles.includes(role.name))) {
-                            await interaction.editReply({ content: "Please select a valid role in <#1106719576508608523> before queueing for a competitive match." });
-                            return;
-                        }
-
-                        let result = matchObject.queuePlayer(interaction.user.id, (interaction.customId === matchObject.rebel_queue_button_id ? "Rebel" : "Imperial"));
-                        if (result === "Queue full." || result === "Already in queue.") {
-                            await interaction.editReply({ ephemeral: true, content: result });
-                        } else {
-                            await matchMessage.edit({ content: matchObject.toString(), components: [matchObject.toButtons()] });
-                            await interaction.editReply({ ephemeral: true, content: "Added to queue." });
-                        }
-                    } else if (interaction.customId === matchObject.dequeue_button_id) {
-                        let result = matchObject.dequeuePlayer(interaction.user.id);
-                        if (result === "Player not in queue.") {
-                            await interaction.editReply({ ephemeral: true, content: result });
-                            return;
-                        }
+        collector.on('collect', async (interaction) => {
+            try {
+                await interaction.deferReply({ ephemeral: true });
+                let matchObject = new Match(getMatchByButton(interaction.customId));
+                let matchMessage = await interaction.channel.messages.fetch(matchObject.message_id);
+                if (interaction.customId === matchObject.rebel_queue_button_id || interaction.customId === matchObject.imperial_queue_button_id) {
+                    let result = matchObject.queuePlayer(interaction.user.id, (interaction.customId === matchObject.rebel_queue_button_id ? "Rebel" : "Imperial"));
+                    if (result === "Queue full." || result === "Already in queue.") {
+                        await interaction.editReply({ ephemeral: true, content: result });
+                    } else {
                         await matchMessage.edit({ content: matchObject.toString(), components: [matchObject.toButtons()] });
-                        await interaction.editReply({ ephemeral: true, content: "Removed from queue." });
+                        await interaction.editReply({ ephemeral: true, content: "Added to queue." });
                     }
-                } catch (error) {
-                    console.error("Interaction failed with error:", error);
+                } else if (interaction.customId === matchObject.dequeue_button_id) {
+                    let result = matchObject.dequeuePlayer(interaction.user.id);
+                    if (result === "Player not in queue.") {
+                        await interaction.editReply({ ephemeral: true, content: result });
+                        return;
+                    }
+                    await matchMessage.edit({ content: matchObject.toString(), components: [matchObject.toButtons()] });
+                    await interaction.editReply({ ephemeral: true, content: "Removed from queue." });
                 }
-            });
-        }
+            } catch (error) {
+                console.error("Interaction failed with error:", error);
+            }
+        });
     } catch (error) {
         console.error("Failed to start collectors: ", error);
     }
     console.log("collectors are running");
-}
-
-async function postWeeklySummary() {
-    client.guilds.cache.forEach(async (guild) => {
-        await guild.channels.fetch();
-
-        let casualChannel = guild.channels.cache.find(channel => channel.name === "weekly-summary" && channel.parent && channel.parent.name === "Casual");
-        let competitiveChannel = guild.channels.cache.find(channel => channel.name === "weekly-summary" && channel.parent && channel.parent.name === "Competitive");
-
-        if (casualChannel) {
-            try {
-                const casualSummaryPath = await generateWeeklySummary(false);
-                await casualChannel.send({
-                    content: 'The weekly results are in for Casual!',
-                    files: [{ attachment: casualSummaryPath, name: 'table.png' }],
-                });
-            } catch (error) {
-                console.error(`Failed to send weekly summary to guild ${guild.id} for Casual: ${error}`);
-            }
-        } else {
-            console.error("No Casual summary channel found");
-        }
-
-        if (competitiveChannel) {
-            try {
-                const competitiveSummaryPath = await generateWeeklySummary(true);
-                await competitiveChannel.send({
-                    content: 'The weekly results are in for Competitive!',
-                    files: [{ attachment: competitiveSummaryPath, name: 'table.png' }],
-                });
-            } catch (error) {
-                console.error(`Failed to send weekly summary to guild ${guild.id} for Competitive: ${error}`);
-            }
-        } else {
-            console.error("No Competitive summary channel found");
-        }
-    });
 }
 
 async function deleteExpiredMatches() {
@@ -177,80 +122,17 @@ async function deleteExpiredMatches() {
     }
 }
 
-async function postMatches() {
-    try {
-        console.log('Running scheduled matches task...');
-
-        const scheduledMatches = getScheduledMatches();
-
-        const weekFromNow = Math.floor(Date.now() / 1000) + Math.floor(7 * 24 * 60 * 60);
-
-        for (let match of scheduledMatches) {
-            if (match.schedule_time <= weekFromNow) {
-
-                const guildId = match.guild_id;
-                const initiatorId = match.initiator_discord_id;
-                const isCompetitive = match.competitive === 1;
-                const timestamp = `<t:${match.schedule_time}:f>`;
-
-                const guild = client.guilds.cache.get(guildId);
-                if (!guild) {
-                    console.log(`Guild ${guildId} not found.`);
-                    continue;
-                }
-
-                const commandName = 'match';
-                const command = client.commands.get(commandName);
-                const member = await guild.members.fetch(initiatorId);
-                if (!member) {
-                    console.log(`Member ${initiatorId} not found in guild ${guildId}.`);
-                    continue;
-                }
-
-                const interaction = {
-                    guild: guild,
-                    member: member,
-                    user: member.user,
-                    commandName: commandName,
-                    options: {
-                        getBoolean: (name) => name === 'competitive' ? isCompetitive : false,
-                        getString: () => timestamp,
-                    },
-                    deferReply: async () => { },
-                    editReply: async () => { },
-                };
-                await command.execute(interaction);
-                match = updateMatchSchedule(match);
-            }
-        }
-
-        console.log('Scheduled matches task completed.');
-    } catch (error) {
-        console.error('Error running scheduled matches task:', error);
-    }
-}
-
 
 client.on('ready', () => {
     startCollectors();
-
-    // Post weekly summaries every Sunday at 12:00 PM
-    cron.schedule('0 12 * * 0', () => {
-        postWeeklySummary();
-    });
 
     // Delete expired matches every 10 minutes
     cron.schedule('*/10 * * * *', () => {
         deleteExpiredMatches();
     });
-
-    // Post matches every hour
-    cron.schedule('0 * * * *', () => {
-        postMatches();
-    });
 });
 
-const cooldowns = new Map();
+/*const cooldowns = new Map();
 
 client.on('messageCreate', async message => {
     try {
@@ -296,7 +178,7 @@ client.on('messageCreate', async message => {
                                 }
                             });
                             const parent = await message.guild.channels.fetch(message.channel.parentId);
-                            let battlefieldObj = new Battlefield(players, Math.floor(Date.now() / 1000), parent.name.toLowerCase() === "competitive" ? 1 : 0, null);
+                            let battlefieldObj = new Battlefield(players, Math.floor(Date.now() / 1000), null);
                             addBattlefield(battlefieldObj);
                             cooldowns.set(message.channel.id, Date.now());
                             await message.delete();
@@ -317,4 +199,4 @@ client.on('messageCreate', async message => {
     } catch (error) {
         console.error(`Message creation failed with error: ${error}`);
     }
-});
+});*/

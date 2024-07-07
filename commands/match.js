@@ -2,15 +2,12 @@ const { SlashCommandBuilder } = require('discord.js');
 const { openMatch } = require('../queries/match');
 const Match = require("../classes/Match");
 const { v4: uuidv4 } = require('uuid');
+const {channelId} = require('../config.json');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('match')
         .setDescription('Begin matchmaking for battlefields!')
-        .addBooleanOption(option =>
-            option.setName('competitive')
-                .setDescription('Is this a competitive match?')
-                .setRequired(true))
         .addStringOption(option =>
             option.setName('time')
                 .setDescription('What time will this match occur?')
@@ -18,7 +15,6 @@ module.exports = {
                 .setMaxLength(50)),
     async execute(interaction) {
         await interaction.deferReply({ ephemeral: true });
-        let is_competitive = interaction.options.getBoolean("competitive") ? 1 : 0;
 
         const timestamp = interaction.options.getString("time");
         const discordTimestampRegex = /<t:\d+:[tTdDfFR]>/
@@ -35,19 +31,11 @@ module.exports = {
             return;
         }
 
-        const member = await interaction.guild.members.fetch(interaction.user.id);
-        if (interaction.options.getBoolean("competitive") && !member.roles.cache.some(role => role.name === "Captain")) {
-            await interaction.editReply({ content: "Only captains may create competitive matches." });
-            return;
-        }
-
         await interaction.guild.channels.fetch();
         let targetChannel = null;
         interaction.guild.channels.cache.forEach(channel => {
             if (
-                channel.name === "battlefields" &&
-                channel.parent &&
-                channel.parent.name === (is_competitive === 1 ? "Competitive" : "Casual")
+                channel.id === channelId
             ) {
                 targetChannel = channel;
             }
@@ -69,8 +57,7 @@ module.exports = {
                 "time": interaction.options.getString("time").match(/<t:(\d+):[a-zA-Z]>?/)[1],
                 "rebel_queue_button_id": uuidv4(),
                 "imperial_queue_button_id": uuidv4(),
-                "dequeue_button_id": uuidv4(),
-                "is_competitive": is_competitive
+                "dequeue_button_id": uuidv4()
             });
             openMatch(match);
             await message.edit({ content: match.toString(), components: [match.toButtons()] });

@@ -11,9 +11,8 @@ function openMatch(match) {
         time, 
         rebel_queue_button_id, 
         imperial_queue_button_id, 
-        dequeue_button_id, 
-        is_competitive) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        dequeue_button_id) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     );
     openMatch.run(
         match.guild_id,
@@ -24,8 +23,7 @@ function openMatch(match) {
         match.time,
         match.rebel_queue_button_id,
         match.imperial_queue_button_id,
-        match.dequeue_button_id,
-        match.is_competitive
+        match.dequeue_button_id
     );
 
     const newMatchId = db.lastInsertRowid;

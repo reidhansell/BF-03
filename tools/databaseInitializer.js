@@ -12,7 +12,6 @@ function initDB() {
         rebel_queue_button_id TEXT,
         imperial_queue_button_id TEXT,
         dequeue_button_id TEXT,
-        is_competitive BOOLEAN,
         is_removed BOOLEAN DEFAULT FALSE
         );`
     );
@@ -31,8 +30,7 @@ function initDB() {
     const createBattlefieldTable = db.prepare(`CREATE TABLE IF NOT EXISTS battlefield (
         battlefield_id INTEGER PRIMARY KEY AUTOINCREMENT,
         time INTEGER,
-        location TEXT DEFAULT NULL,
-        competitive INTEGER DEFAULT 0
+        location TEXT DEFAULT NULL
         );`
     );
     createBattlefieldTable.run();
@@ -51,16 +49,6 @@ function initDB() {
         );`
     );
     createBattlefieldPlayerTable.run();
-
-    const createScheduleTable = db.prepare(`CREATE TABLE IF NOT EXISTS match_schedule (
-        schedule_id INTEGER PRIMARY KEY, 
-        competitive INTEGER, 
-        schedule_time TEXT, 
-        initiator_discord_id TEXT,
-        guild_id TEXT
-        );`
-    );
-    createScheduleTable.run();
 
     console.log("Database initialized");
 }

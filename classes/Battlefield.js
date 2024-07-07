@@ -3,13 +3,12 @@ const fs = require('fs');
 const path = require('path');
 
 class Battlefield {
-    constructor(players, time, competitive, location) {
+    constructor(players, time, location) {
         if (players.length < 8 || players.length > 32) {
             throw new Error('Player list must contain between 8 and 32 players.');
         }
         this.players = players;
         this.time = time;
-        this.competitive = competitive
         this.location = location;
     }
 
@@ -83,7 +82,7 @@ class Battlefield {
                 </head>
                 <body>
                     <div class="banner">
-                        <h1>${this.competitive ? "competitive" : "casual"} battlefield report</h1>
+                        <h1>battlefield report</h1>
                     </div>
                     <table id="player-table">
                         <tr>
