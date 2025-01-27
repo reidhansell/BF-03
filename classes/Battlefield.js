@@ -4,8 +4,8 @@ const path = require('path');
 
 class Battlefield {
     constructor(players, time, location) {
-        if (players.length < 8 || players.length > 32) {
-            throw new Error('Player list must contain between 8 and 32 players.');
+        if (players.length < 6 || players.length > 32) {
+            throw new Error('Player list must contain between 6 and 32 players.');
         }
         this.players = players;
         this.time = time;
@@ -21,6 +21,7 @@ class Battlefield {
     }
 
     async summary() {
+        this.players.sort((a, b) => b.damage - a.damage);
         let data = this.players.map(player => `
             <tr style="color: ${player.faction === 'Rebel' ? 'red' : '#1772b4'}">
                 <td>${player.name}</td>

@@ -19,13 +19,13 @@
   },
   "homepage": "https://github.com/reidhansell/SWG-SHADE#readme",
   "dependencies": {
-    "axios": "^1.4.0",
     "better-sqlite3": "^8.0.1",
-    "cheerio": "^1.0.0-rc.12",
     "discord.js": "^14.7.1",
+    "express": "^4.21.2",
     "lodash": "^4.17.21",
     "node-cron": "^3.0.2",
     "puppeteer": "^20.4.0",
+    "swg-shade": "file:",
     "uuid": "^9.0.0"
   }
 }

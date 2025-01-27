@@ -1,5 +1,6 @@
 {
 	"token": "",
     "clientId": "",
-    "channelId": ""
+    "channelId": "",
+    "exportChannelId": ""
 }

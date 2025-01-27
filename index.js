@@ -4,15 +4,75 @@ const { Client, GatewayIntentBits, Collection, ComponentType } = require('discor
 const { token } = require('./config.json');
 const { getMatchByButton, getExpiredMatches, setRemovedStatus } = require('./queries/match');
 const { addBattlefield } = require('./queries/battlefield');
-const axios = require('axios');
-const cheerio = require('cheerio');
 const Battlefield = require("./classes/Battlefield");
 const BattlefieldPlayer = require("./classes/BattlefieldPlayer");
 const cron = require('node-cron');
 const { initDB } = require('./tools/databaseInitializer');
 const _ = require('lodash');
 const Match = require("./classes/Match");
-const { channelId } = require('./config.json');
+const { channelId, exportChannelId } = require('./config.json');
+const express = require('express');
+const app = express();
+
+app.use(express.json());
+
+const BF_NAME_MAP = {
+    "massassi_isle": "Massassi Isle",
+    "battlefield2": "Jungle Warfare",
+    "battlefield3": "Bunker Assault",
+    "battlefield4": "Data Runner"
+};
+
+app.post('/api/battlefield', async (req, res) => {
+    try {
+        let data = req.body;
+
+        if (!data || !data.battlefield || !Array.isArray(data.scores)) {
+            return res.status(400).json({ error: 'Invalid battlefield data format' });
+        }
+
+        let battlefieldFriendlyName = BF_NAME_MAP[data.battlefield] || data.battlefield;
+
+        let players = data.scores.map(s => new BattlefieldPlayer({
+            name: s.player,
+            faction: s.faction,
+            kills: parseInt(s.kills) || 0,
+            assists: parseInt(s.assists) || 0,
+            deaths: parseInt(s.deaths) || 0,
+            damage: parseInt(s.damage) || 0,
+            healing: parseInt(s.healing) || 0,
+            captures: parseInt(s.captures) || 0
+        }));
+
+        let battlefieldObj = new Battlefield(players, Math.floor(Date.now() / 1000), null);
+
+        addBattlefield(battlefieldObj);
+
+        battlefieldObj.summary().then(imagePath => {
+            const channel = client.channels.cache.get(exportChannelId);
+            if (!channel) {
+                console.error('Could not find channel for battlefield summary post.');
+                return;
+            }
+
+            channel.send({
+                content: `New battlefield results: **${battlefieldFriendlyName}**`,
+                files: [{ attachment: imagePath, name: 'table.png' }]
+            });
+        }).catch(console.error);
+
+        res.status(200).json({ message: 'Battlefield data processed successfully' });
+
+    } catch (error) {
+        console.error('Error in /api/battlefield:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Battlefield server listening on port ${PORT}`);
+});
 
 initDB();
 
@@ -125,78 +185,7 @@ async function deleteExpiredMatches() {
 
 client.on('ready', () => {
     startCollectors();
-
-    // Delete expired matches every 10 minutes
     cron.schedule('*/10 * * * *', () => {
         deleteExpiredMatches();
     });
 });
-
-/*const cooldowns = new Map();
-
-client.on('messageCreate', async message => {
-    try {
-
-        if (message.channel.name === 'exports') {
-            if (message.attachments.size > 0) {
-                message.attachments.forEach(async attachment => {
-                    try {
-                        if (attachment.name.endsWith('.html')) {
-                            if (cooldowns.has(message.channel.id)) {
-                                const lastCommand = cooldowns.get(message.channel.id);
-                                const timeDifference = Date.now() - lastCommand;
-                                if (timeDifference < 60000) {
-                                    await message.reply('Please wait 60 seconds before uploading another export.');
-                                    return message.delete();
-                                }
-                            }
-                            const response = await axios.get(attachment.url);
-                            const $ = cheerio.load(response.data);
-                            let players = [];
-
-                            const headers = ['Name', 'Faction', 'Kills', 'Assists', 'Deaths', 'Damage', 'Healing', 'Captures'];
-                            const tableHeaders = $('table tr').first().children().map((i, th) => $(th).text()).toArray();
-                            if (!_.isEqual(headers, tableHeaders)) {
-                                await message.reply('Incorrect export format.');
-                                return message.delete();
-                            }
-
-                            $('table tr').each((i, row) => {
-                                if (i > 0) {
-                                    let cells = $(row).find('td');
-                                    let player = new BattlefieldPlayer({
-                                        name: $(cells[0]).text(),
-                                        faction: $(cells[1]).text(),
-                                        kills: parseInt($(cells[2]).text()),
-                                        assists: parseInt($(cells[3]).text()),
-                                        deaths: parseInt($(cells[4]).text()),
-                                        damage: parseInt($(cells[5]).text()),
-                                        healing: parseInt($(cells[6]).text()),
-                                        captures: parseInt($(cells[7]).text())
-                                    });
-                                    players.push(player);
-                                }
-                            });
-                            const parent = await message.guild.channels.fetch(message.channel.parentId);
-                            let battlefieldObj = new Battlefield(players, Math.floor(Date.now() / 1000), null);
-                            addBattlefield(battlefieldObj);
-                            cooldowns.set(message.channel.id, Date.now());
-                            await message.delete();
-                            battlefieldObj.summary().then(imagePath => {
-                                message.channel.send({ content: `Battlefield recorded`, files: [{ attachment: imagePath, name: 'table.png' }] });
-                            }).catch(console.error);
-                        } else if (!(message.author.id === client.user.id)) {
-                            await message.delete();
-                        }
-                    } catch (error) {
-                        console.error(`Failed to process attachment ${attachment.name}: ${error}`);
-                    }
-                });
-            } else if (!(message.author.id === client.user.id)) {
-                await message.delete();
-            }
-        }
-    } catch (error) {
-        console.error(`Message creation failed with error: ${error}`);
-    }
-});*/
