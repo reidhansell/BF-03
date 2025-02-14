@@ -1,5 +1,5 @@
-const { db } = require("../tools/databaseInitializer.js")
-const MatchPlayer = require("../classes/MatchPlayer.js")
+const { db } = require("../tools/databaseInitializer.js");
+const MatchPlayer = require("../classes/MatchPlayer.js");
 
 function openMatch(match) {
     const openMatch = db.prepare(`INSERT INTO match (
@@ -11,9 +11,9 @@ function openMatch(match) {
         time, 
         rebel_queue_button_id, 
         imperial_queue_button_id, 
-        dequeue_button_id) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    );
+        dequeue_button_id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+
     openMatch.run(
         match.guild_id,
         match.channel_id,
@@ -26,6 +26,7 @@ function openMatch(match) {
         match.dequeue_button_id
     );
 
+    // preserve usage of db.lastInsertRowid
     const newMatchId = db.lastInsertRowid;
 
     return newMatchId;
@@ -99,4 +100,4 @@ module.exports = {
     getPlayersByMatch,
     getExpiredMatches,
     setRemovedStatus
-}
+};

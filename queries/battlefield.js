@@ -1,4 +1,4 @@
-const { db } = require("../tools/databaseInitializer.js")
+const { db } = require("../tools/databaseInitializer.js");
 
 function addBattlefield(battlefieldObj) {
     try {
@@ -16,8 +16,8 @@ function addBattlefield(battlefieldObj) {
                 damage, 
                 captures, 
                 assists, 
-                battlefield_id) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`);
+                battlefield_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`);
 
             for (const player of battlefieldObj.players) {
                 addBattlefieldPlayer.run(
@@ -28,7 +28,8 @@ function addBattlefield(battlefieldObj) {
                     player.damage,
                     player.captures,
                     player.assists,
-                    battlefield_id);
+                    battlefield_id
+                );
             }
         })();
 
@@ -41,4 +42,4 @@ function addBattlefield(battlefieldObj) {
 
 module.exports = {
     addBattlefield
-}
+};
