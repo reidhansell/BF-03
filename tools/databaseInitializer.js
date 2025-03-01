@@ -141,7 +141,7 @@ function initDB() {
 
     const createBattlefieldPlayerTable = db.prepare(`CREATE TABLE IF NOT EXISTS battlefield_player (
         player_name TEXT,
-        faction TEXT CHECK(faction IN ('Imperial', 'Rebel')),
+        faction TEXT CHECK(faction IN ('Imperial', 'Rebel', 'Red', 'Blue')),
         kills INTEGER,
         healing INTEGER,
         damage INTEGER,

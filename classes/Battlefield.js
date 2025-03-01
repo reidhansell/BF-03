@@ -23,7 +23,7 @@ class Battlefield {
     async summary() {
         this.players.sort((a, b) => b.damage - a.damage);
         let data = this.players.map(player => `
-            <tr style="color: ${player.faction === 'Rebel' ? 'red' : '#1772b4'}">
+            <tr style="color: ${player.faction === 'Rebel' || player.faction === "Red" ? 'red' : '#1772b4'}">
                 <td>${player.name}</td>
                 <td>${player.faction}</td>
                 <td>${player.kills}</td>
