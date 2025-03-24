@@ -20,7 +20,8 @@ const BF_NAME_MAP = {
     "massassi_isle": "Massassi Isle",
     "battlefield2": "Jungle Warfare",
     "battlefield3": "Bunker Assault",
-    "battlefield4": "Data Runner"
+    "battlefield4": "Data Runner",
+    "battlefield5": "Volcanic Turret Siege"
 };
 
 app.post('/api/battlefield', async (req, res) => {
